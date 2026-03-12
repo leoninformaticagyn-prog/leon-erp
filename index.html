@@ -274,9 +274,14 @@ render()
 
 }
 
-function imeiExiste(imei){
+if(imeiExiste(codigo)){
 
-return estoque.some(p => p.imei===imei)
+scanner.stop()
+
+alert("IMEI já cadastrado")
+
+return
+
 
 }
 
@@ -352,9 +357,9 @@ status:"Estoque"
 
 save()
 
-alert("IMEI cadastrado com sucesso: "+codigo)
-
 scanner.stop()
+
+alert("IMEI cadastrado com sucesso: "+codigo)
 
 }
 
