@@ -6,33 +6,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Leon Vendas Cloud</title>
+<title>Leon Vendas</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
-
-<script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-apiKey: "AIzaSyADPuE6CYEKQOjgJH4RYcNMjzMKiZoSnGU",
-authDomain: "leon-vendas-ac514.firebaseapp.com",
-projectId: "leon-vendas-ac514",
-storageBucket: "leon-vendas-ac514.firebasestorage.app",
-messagingSenderId: "537113092633",
-appId: "1:537113092633:web:1af34305a5beffc05d0088"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-window.db=db
-window.collection=collection
-window.addDoc=addDoc
-window.getDocs=getDocs
-
-</script>
 
 <style>
 
@@ -115,13 +91,13 @@ align-items:center;
 <input id="loginUser" placeholder="Usuário">
 <input id="loginPass" type="password" placeholder="Senha">
 
-<button onclick="fazerLogin()">Entrar</button>
+<button onclick="login()">Entrar</button>
 
 </div>
 
 <header>
 
-<h2>Leon Vendas Cloud</h2>
+<h2>Leon Vendas</h2>
 
 </header>
 
@@ -210,7 +186,8 @@ align-items:center;
 
 <h3>Registrar Venda</h3>
 
-<input id="imeiVenda" placeholder="Buscar IMEI" onkeyup="buscarImeiVenda()">
+<input id="imeiVenda" placeholder="Buscar IMEI" onkeyup="buscarImei()">
+
 <div id="resultadoBusca"></div>
 
 <input id="valorVenda" placeholder="Valor">
@@ -221,9 +198,23 @@ align-items:center;
 
 <script>
 
+let estoque = JSON.parse(localStorage.getItem("estoque")||"[]")
+let modelos = JSON.parse(localStorage.getItem("modelos")||"[]")
+let clientes = JSON.parse(localStorage.getItem("clientes")||"[]")
+let vendas = JSON.parse(localStorage.getItem("vendas")||"[]")
+
 let scanner
 
-function fazerLogin(){
+function salvarDados(){
+
+localStorage.setItem("estoque",JSON.stringify(estoque))
+localStorage.setItem("modelos",JSON.stringify(modelos))
+localStorage.setItem("clientes",JSON.stringify(clientes))
+localStorage.setItem("vendas",JSON.stringify(vendas))
+
+}
+
+function login(){
 
 let user=document.getElementById("loginUser").value
 let pass=document.getElementById("loginPass").value
@@ -248,29 +239,25 @@ document.getElementById(id).classList.add("active")
 
 }
 
-async function salvarCliente(){
+function salvarCliente(){
 
 let nome=document.getElementById("clienteNome").value
 
-await addDoc(collection(db,"clientes"),{nome})
+clientes.push({nome})
 
-alert("cliente salvo")
+salvarDados()
 
 carregarClientes()
 
 }
 
-async function carregarClientes(){
+function carregarClientes(){
 
 let lista=document.getElementById("listaClientes")
 
 lista.innerHTML=""
 
-const query=await getDocs(collection(db,"clientes"))
-
-query.forEach(doc=>{
-
-let c=doc.data()
+clientes.forEach(c=>{
 
 lista.innerHTML+=`<div>${c.nome}</div>`
 
@@ -278,21 +265,21 @@ lista.innerHTML+=`<div>${c.nome}</div>`
 
 }
 
-async function criarModelo(){
+function criarModelo(){
 
 let modelo=document.getElementById("modelo").value
 let cap=document.getElementById("capacidade").value
 let cor=document.getElementById("cor").value
 
-await addDoc(collection(db,"modelos"),{modelo,cap,cor})
+modelos.push({modelo,cap,cor})
 
-alert("modelo criado")
+salvarDados()
 
 carregarModelos()
 
 }
 
-async function carregarModelos(){
+function carregarModelos(){
 
 let select=document.getElementById("modeloScanner")
 let lista=document.getElementById("listaModelos")
@@ -300,11 +287,7 @@ let lista=document.getElementById("listaModelos")
 select.innerHTML=""
 lista.innerHTML=""
 
-const query=await getDocs(collection(db,"modelos"))
-
-query.forEach(doc=>{
-
-let m=doc.data()
+modelos.forEach(m=>{
 
 select.innerHTML+=`<option value="${m.modelo}|${m.cap}|${m.cor}">
 ${m.modelo} ${m.cap} ${m.cor}
@@ -332,31 +315,20 @@ scanner.start(
 { facingMode:"environment" },
 { fps:10, qrbox:250 },
 
-async (decodedText)=>{
+(decodedText)=>{
 
 if(!decodedText.startsWith("35")) return
 if(decodedText.length!==15) return
 
-const query=await getDocs(collection(db,"estoque"))
+if(estoque.find(p=>p.imei===decodedText)){
 
-let duplicado=false
-
-query.forEach(doc=>{
-
-let p=doc.data()
-
-if(p.imei===decodedText){
-duplicado=true
-}
-
-})
-
-if(duplicado){
 alert("IMEI já cadastrado")
+
 return
+
 }
 
-await addDoc(collection(db,"estoque"),{
+estoque.push({
 
 modelo,
 cap,
@@ -366,10 +338,13 @@ status:"Estoque"
 
 })
 
-alert("IMEI cadastrado")
+salvarDados()
 
 carregarEstoque()
+
 carregarDashboard()
+
+alert("IMEI cadastrado")
 
 }
 
@@ -377,17 +352,13 @@ carregarDashboard()
 
 }
 
-async function carregarEstoque(){
+function carregarEstoque(){
 
 let tabela=document.getElementById("tabelaEstoque")
 
 tabela.innerHTML=""
 
-const query=await getDocs(collection(db,"estoque"))
-
-query.forEach(doc=>{
-
-let p=doc.data()
+estoque.forEach(p=>{
 
 tabela.innerHTML+=`
 <tr>
@@ -403,7 +374,7 @@ tabela.innerHTML+=`
 
 }
 
-async function buscarImeiVenda(){
+function buscarImei(){
 
 let busca=document.getElementById("imeiVenda").value
 
@@ -413,11 +384,7 @@ resultado.innerHTML=""
 
 if(busca.length<3) return
 
-const query=await getDocs(collection(db,"estoque"))
-
-query.forEach(doc=>{
-
-let p=doc.data()
+estoque.forEach(p=>{
 
 if(p.imei.includes(busca) && p.status==="Estoque"){
 
@@ -441,7 +408,7 @@ document.getElementById("resultadoBusca").innerHTML=""
 
 }
 
-async function registrarVenda(){
+function registrarVenda(){
 
 let imei=document.getElementById("imeiVenda").value
 let valor=document.getElementById("valorVenda").value
@@ -450,7 +417,7 @@ valor=parseFloat(valor.replace(".","").replace(",","."))
 
 valor=valor.toLocaleString("pt-BR",{minimumFractionDigits:2})
 
-await addDoc(collection(db,"vendas"),{
+vendas.push({
 
 imei,
 valor,
@@ -458,24 +425,24 @@ data:new Date()
 
 })
 
+salvarDados()
+
 alert("venda concluida com sucesso")
 
 }
 
-async function carregarDashboard(){
+function carregarDashboard(){
 
 let painel=document.getElementById("painelModelos")
 
 let contagem={}
 
-const query=await getDocs(collection(db,"estoque"))
-
-query.forEach(doc=>{
-
-let p=doc.data()
+estoque.forEach(p=>{
 
 if(!contagem[p.modelo]){
+
 contagem[p.modelo]=0
+
 }
 
 contagem[p.modelo]++
