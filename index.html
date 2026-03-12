@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
 
 <meta charset="UTF-8">
@@ -66,11 +67,6 @@ padding:8px;
 margin:4px 0;
 width:100%;
 max-width:420px
-}
-
-button.small{
-font-size:12px;
-padding:4px 6px
 }
 
 .card{
@@ -241,15 +237,24 @@ width:300px
 <script>
 
 let estoque = JSON.parse(localStorage.getItem("estoque")||"[]")
-
 let vendas = JSON.parse(localStorage.getItem("vendas")||"[]")
 
 let scanner
 
+function formatarMoeda(valor){
+
+let numero = valor.replace(/\./g,"").replace(",",".")
+numero = parseFloat(numero)
+
+if(isNaN(numero)) return "0,00"
+
+return numero.toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2})
+
+}
+
 function login(){
 
 document.getElementById("loginScreen").style.display="none"
-
 document.getElementById("app").style.display="block"
 
 render()
@@ -259,7 +264,6 @@ render()
 function logout(){
 
 document.getElementById("app").style.display="none"
-
 document.getElementById("loginScreen").style.display="block"
 
 }
@@ -267,28 +271,21 @@ document.getElementById("loginScreen").style.display="block"
 function save(){
 
 localStorage.setItem("estoque",JSON.stringify(estoque))
-
 localStorage.setItem("vendas",JSON.stringify(vendas))
 
 render()
 
 }
 
-if(imeiExiste(codigo)){
+function imeiExiste(imei){
 
-scanner.stop()
-
-alert("IMEI já cadastrado")
-
-return
-
+return estoque.some(p => p.imei===imei)
 
 }
 
 function importar(){
 
 let modelo=document.getElementById("modelo").value
-
 let cap=document.getElementById("capacidade").value
 
 let lista=document.getElementById("listaImei").value.split("\\n")
@@ -335,13 +332,12 @@ scanner.start(
 let codigo = decodedText.trim()
 
 if(!/^[0-9]+$/.test(codigo)) return
-
 if(!codigo.startsWith("35")) return
-
 if(codigo.length!==15) return
 
 if(imeiExiste(codigo)){
 
+scanner.stop()
 alert("IMEI já cadastrado")
 
 return
@@ -373,14 +369,15 @@ let imei=document.getElementById("imeiVenda").value
 
 let cliente=document.getElementById("clienteVenda").value
 
-let valor=document.getElementById("valorVenda").value
+let valorBruto=document.getElementById("valorVenda").value
+
+let valor=formatarMoeda(valorBruto)
 
 let aparelho = estoque.find(p=>p.imei===imei)
 
 if(!aparelho){
 
-alert("IMEI não encontrado")
-
+alert("imei nao encontrado")
 return
 
 }
@@ -397,6 +394,8 @@ data:new Date().toLocaleDateString()
 })
 
 save()
+
+alert("venda concluida com sucesso")
 
 }
 
@@ -427,13 +426,9 @@ let linhas=document.querySelectorAll("#estoqueBody tr")
 linhas.forEach(l=>{
 
 if(l.innerText.includes(busca)){
-
 l.style.display=""
-
 }else{
-
 l.style.display="none"
-
 }
 
 })
@@ -486,7 +481,8 @@ fb.innerHTML=""
 
 vendas.forEach((v,i)=>{
 
-total+=Number(v.valor)
+let numero = parseFloat(v.valor.replace(/\./g,"").replace(",","."))
+total+=numero
 
 fb.innerHTML+=`
 
@@ -514,10 +510,9 @@ fb.innerHTML+=`
 
 }
 
-document.getElementById("caixaTotal").innerHTML="Caixa total: R$ "+total
+document.getElementById("caixaTotal").innerHTML="Caixa total: R$ "+total.toLocaleString("pt-BR",{minimumFractionDigits:2})
 
 let estoqueQtd=estoque.filter(x=>x.status==="Estoque").length
-
 let vendidos=estoque.filter(x=>x.status==="Vendido").length
 
 document.getElementById("stats").innerHTML="Em estoque: "+estoqueQtd+" | Vendidos: "+vendidos
