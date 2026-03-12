@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Leon Vendas</title>
+<title>Leon Vendas PRO</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
@@ -27,11 +27,11 @@ text-align:center
 
 nav{
 display:flex;
+flex-wrap:wrap;
 gap:10px;
 padding:10px;
 justify-content:center;
-background:#222;
-flex-wrap:wrap
+background:#222
 }
 
 nav button{
@@ -66,13 +66,6 @@ padding:8px;
 margin:5px;
 }
 
-.caixa{
-background:white;
-padding:20px;
-margin-bottom:20px;
-border-radius:6px;
-}
-
 </style>
 
 </head>
@@ -80,7 +73,7 @@ border-radius:6px;
 <body>
 
 <header>
-<h2>Leon Vendas</h2>
+<h2>Leon Vendas PRO</h2>
 </header>
 
 <nav>
@@ -89,25 +82,17 @@ border-radius:6px;
 <button onclick="show('clientes')">Clientes</button>
 <button onclick="show('modelos')">Modelos</button>
 <button onclick="show('scanner')">Scanner</button>
+<button onclick="show('manual')">Adicionar Manual</button>
 <button onclick="show('estoque')">Estoque</button>
 <button onclick="show('vendas')">Vendas</button>
-<button onclick="show('cancelamentos')">Cancelamentos</button>
 
 </nav>
 
 <section id="dashboard" class="active">
 
-<div class="caixa">
-
 <h3>Caixa de Hoje</h3>
 
-<div id="valorHoje"></div>
-<div id="qtdHoje"></div>
-
-</div>
-
-<button onclick="exportarBackup()">Exportar Backup</button>
-<input type="file" onchange="importarBackup(event)">
+<div id="caixa"></div>
 
 </section>
 
@@ -127,11 +112,9 @@ border-radius:6px;
 
 <h3>Criar Modelo</h3>
 
-<input id="modelo" placeholder="Modelo">
-<input id="capacidade" placeholder="Capacidade">
-<input id="cor" placeholder="Cor">
+<input id="modeloNome" placeholder="Modelo">
 
-<button onclick="criarModelo()">Salvar</button>
+<button onclick="salvarModelo()">Salvar</button>
 
 <div id="listaModelos"></div>
 
@@ -139,13 +122,25 @@ border-radius:6px;
 
 <section id="scanner">
 
-<h3>Scanner IMEI</h3>
+<h3>Scanner</h3>
 
 <select id="modeloScanner"></select>
 
 <div id="reader" style="width:300px"></div>
 
-<button onclick="startScanner()">Iniciar Scanner</button>
+<button onclick="startScanner()">Iniciar</button>
+
+</section>
+
+<section id="manual">
+
+<h3>Adicionar Código Manual</h3>
+
+<select id="modeloManual"></select>
+
+<input id="codigoManual" placeholder="IMEI ou SN">
+
+<button onclick="adicionarManual()">Adicionar</button>
 
 </section>
 
@@ -156,15 +151,11 @@ border-radius:6px;
 <table>
 
 <thead>
-
 <tr>
 <th>Modelo</th>
-<th>Cap</th>
-<th>Cor</th>
-<th>IMEI</th>
-<th>Ação</th>
+<th>Código</th>
+<th>Tipo</th>
 </tr>
-
 </thead>
 
 <tbody id="tabelaEstoque"></tbody>
@@ -179,26 +170,24 @@ border-radius:6px;
 
 <select id="clienteVenda"></select>
 
-<input id="compradorVenda" placeholder="Comprador">
+<input id="comprador" placeholder="Comprador">
 
-<input id="imeiVenda" placeholder="IMEI">
+<input id="codigoVenda" placeholder="IMEI ou SN">
 
 <input id="valorVenda" placeholder="Valor">
 
 <button onclick="registrarVenda()">Registrar</button>
 
-<h3>Histórico de vendas</h3>
+<h3>Histórico</h3>
 
 <table>
 
 <thead>
 <tr>
 <th>Loja</th>
-<th>Comprador</th>
-<th>IMEI</th>
+<th>Código</th>
 <th>Valor</th>
 <th>Data</th>
-<th>Ação</th>
 </tr>
 </thead>
 
@@ -208,45 +197,31 @@ border-radius:6px;
 
 </section>
 
-<section id="cancelamentos">
-
-<h3>Histórico de Cancelamentos</h3>
-
-<table>
-
-<thead>
-<tr>
-<th>Loja</th>
-<th>Comprador</th>
-<th>IMEI</th>
-<th>Valor</th>
-<th>Venda</th>
-<th>Cancelamento</th>
-<th>Motivo</th>
-</tr>
-</thead>
-
-<tbody id="tabelaCancelamentos"></tbody>
-
-</table>
-
-</section>
-
 <script>
 
-let estoque = JSON.parse(localStorage.getItem("estoque")||"[]")
-let modelos = JSON.parse(localStorage.getItem("modelos")||"[]")
-let clientes = JSON.parse(localStorage.getItem("clientes")||"[]")
-let vendas = JSON.parse(localStorage.getItem("vendas")||"[]")
-let cancelamentos = JSON.parse(localStorage.getItem("cancelamentos")||"[]")
+let db
 
-function salvarDados(){
+let request = indexedDB.open("LeonDB",1)
 
-localStorage.setItem("estoque",JSON.stringify(estoque))
-localStorage.setItem("modelos",JSON.stringify(modelos))
-localStorage.setItem("clientes",JSON.stringify(clientes))
-localStorage.setItem("vendas",JSON.stringify(vendas))
-localStorage.setItem("cancelamentos",JSON.stringify(cancelamentos))
+request.onupgradeneeded = function(e){
+
+db = e.target.result
+
+db.createObjectStore("clientes",{keyPath:"id",autoIncrement:true})
+db.createObjectStore("modelos",{keyPath:"id",autoIncrement:true})
+db.createObjectStore("estoque",{keyPath:"codigo"})
+db.createObjectStore("vendas",{keyPath:"id",autoIncrement:true})
+
+}
+
+request.onsuccess=function(e){
+
+db=e.target.result
+
+carregarClientes()
+carregarModelos()
+carregarEstoque()
+carregarVendas()
 
 }
 
@@ -261,9 +236,9 @@ function salvarCliente(){
 
 let nome=document.getElementById("clienteNome").value
 
-clientes.push({nome})
+let tx=db.transaction("clientes","readwrite")
 
-salvarDados()
+tx.objectStore("clientes").add({nome})
 
 carregarClientes()
 
@@ -277,24 +252,33 @@ let select=document.getElementById("clienteVenda")
 lista.innerHTML=""
 select.innerHTML=""
 
-clientes.forEach(c=>{
+let tx=db.transaction("clientes")
 
-lista.innerHTML+=`<div>${c.nome}</div>`
-select.innerHTML+=`<option>${c.nome}</option>`
+tx.objectStore("clientes").openCursor().onsuccess=function(e){
 
-})
+let cursor=e.target.result
+
+if(cursor){
+
+lista.innerHTML+=cursor.value.nome+"<br>"
+
+select.innerHTML+=`<option>${cursor.value.nome}</option>`
+
+cursor.continue()
 
 }
 
-function criarModelo(){
+}
 
-let modelo=document.getElementById("modelo").value
-let cap=document.getElementById("capacidade").value
-let cor=document.getElementById("cor").value
+}
 
-modelos.push({modelo,cap,cor})
+function salvarModelo(){
 
-salvarDados()
+let nome=document.getElementById("modeloNome").value
+
+let tx=db.transaction("modelos","readwrite")
+
+tx.objectStore("modelos").add({nome})
 
 carregarModelos()
 
@@ -303,30 +287,62 @@ carregarModelos()
 function carregarModelos(){
 
 let lista=document.getElementById("listaModelos")
-let select=document.getElementById("modeloScanner")
+let s1=document.getElementById("modeloScanner")
+let s2=document.getElementById("modeloManual")
 
 lista.innerHTML=""
-select.innerHTML=""
+s1.innerHTML=""
+s2.innerHTML=""
 
-modelos.forEach(m=>{
+let tx=db.transaction("modelos")
 
-lista.innerHTML+=`<div>${m.modelo} ${m.cap} ${m.cor}</div>`
+tx.objectStore("modelos").openCursor().onsuccess=function(e){
 
-select.innerHTML+=`<option value="${m.modelo}|${m.cap}|${m.cor}">
-${m.modelo} ${m.cap} ${m.cor}
-</option>`
+let cursor=e.target.result
 
-})
+if(cursor){
+
+lista.innerHTML+=cursor.value.nome+"<br>"
+
+s1.innerHTML+=`<option>${cursor.value.nome}</option>`
+s2.innerHTML+=`<option>${cursor.value.nome}</option>`
+
+cursor.continue()
+
+}
+
+}
+
+}
+
+function detectarTipo(codigo){
+
+if(codigo.length==15 && codigo.startsWith("35")) return "IMEI"
+
+if(codigo.length==17) return "SN"
+
+return "DESCONHECIDO"
+
+}
+
+function adicionarManual(){
+
+let modelo=document.getElementById("modeloManual").value
+let codigo=document.getElementById("codigoManual").value
+
+let tipo=detectarTipo(codigo)
+
+let tx=db.transaction("estoque","readwrite")
+
+tx.objectStore("estoque").add({codigo,modelo,tipo})
+
+carregarEstoque()
 
 }
 
 function startScanner(){
 
-let dados=document.getElementById("modeloScanner").value.split("|")
-
-let modelo=dados[0]
-let cap=dados[1]
-let cor=dados[2]
+let modelo=document.getElementById("modeloScanner").value
 
 const scanner=new Html5Qrcode("reader")
 
@@ -336,17 +352,17 @@ scanner.start(
 
 (decodedText)=>{
 
-if(decodedText.length!==15)return
+let tipo=detectarTipo(decodedText)
 
-estoque.push({modelo,cap,cor,imei:decodedText})
+let tx=db.transaction("estoque","readwrite")
 
-salvarDados()
+tx.objectStore("estoque").add({codigo:decodedText,modelo,tipo})
+
+scanner.stop()
 
 carregarEstoque()
 
-alert("IMEI cadastrado")
-
-scanner.stop()
+alert("Cadastrado")
 
 }
 
@@ -360,48 +376,53 @@ let tabela=document.getElementById("tabelaEstoque")
 
 tabela.innerHTML=""
 
-estoque.forEach((p,i)=>{
+let tx=db.transaction("estoque")
+
+tx.objectStore("estoque").openCursor().onsuccess=function(e){
+
+let cursor=e.target.result
+
+if(cursor){
+
+let p=cursor.value
 
 tabela.innerHTML+=`
 <tr>
 <td>${p.modelo}</td>
-<td>${p.cap}</td>
-<td>${p.cor}</td>
-<td>${p.imei}</td>
-<td><button onclick="excluirEstoque(${i})">Excluir</button></td>
+<td>${p.codigo}</td>
+<td>${p.tipo}</td>
 </tr>
 `
 
-})
+cursor.continue()
 
 }
 
-function excluirEstoque(i){
-
-estoque.splice(i,1)
-
-salvarDados()
-
-carregarEstoque()
+}
 
 }
 
 function registrarVenda(){
 
-let imei=document.getElementById("imeiVenda").value
+let codigo=document.getElementById("codigoVenda").value
 let cliente=document.getElementById("clienteVenda").value
-let comprador=document.getElementById("compradorVenda").value
+let comprador=document.getElementById("comprador").value
 let valor=document.getElementById("valorVenda").value
 
-vendas.push({cliente,comprador,imei,valor,data:new Date()})
+let tx=db.transaction(["estoque","vendas"],"readwrite")
 
-estoque=estoque.filter(p=>p.imei!==imei)
+tx.objectStore("vendas").add({
+codigo,
+cliente,
+comprador,
+valor,
+data:new Date()
+})
 
-salvarDados()
+tx.objectStore("estoque").delete(codigo)
 
-carregarEstoque()
 carregarVendas()
-carregarDashboard()
+carregarEstoque()
 
 }
 
@@ -411,149 +432,32 @@ let tabela=document.getElementById("tabelaVendas")
 
 tabela.innerHTML=""
 
-vendas.forEach((v,i)=>{
+let tx=db.transaction("vendas")
+
+tx.objectStore("vendas").openCursor().onsuccess=function(e){
+
+let cursor=e.target.result
+
+if(cursor){
+
+let v=cursor.value
 
 tabela.innerHTML+=`
 <tr>
 <td>${v.cliente}</td>
-<td>${v.comprador}</td>
-<td>${v.imei}</td>
+<td>${v.codigo}</td>
 <td>${v.valor}</td>
 <td>${new Date(v.data).toLocaleString()}</td>
-<td><button onclick="cancelarVenda(${i})">Cancelar</button></td>
 </tr>
 `
 
-})
+cursor.continue()
 
 }
 
-function cancelarVenda(i){
-
-let confirmar=confirm("Confirmar cancelamento da venda?")
-
-if(!confirmar)return
-
-let motivo=prompt("Motivo do cancelamento")
-
-let venda=vendas[i]
-
-cancelamentos.push({
-...venda,
-dataCancelamento:new Date(),
-motivo
-})
-
-estoque.push({imei:venda.imei})
-
-vendas.splice(i,1)
-
-salvarDados()
-
-carregarEstoque()
-carregarVendas()
-carregarCancelamentos()
-
 }
 
-function carregarCancelamentos(){
-
-let tabela=document.getElementById("tabelaCancelamentos")
-
-tabela.innerHTML=""
-
-cancelamentos.forEach(c=>{
-
-tabela.innerHTML+=`
-<tr>
-<td>${c.cliente}</td>
-<td>${c.comprador}</td>
-<td>${c.imei}</td>
-<td>${c.valor}</td>
-<td>${new Date(c.data).toLocaleString()}</td>
-<td>${new Date(c.dataCancelamento).toLocaleString()}</td>
-<td>${c.motivo}</td>
-</tr>
-`
-
-})
-
 }
-
-function carregarDashboard(){
-
-let hoje=new Date().toLocaleDateString()
-
-let total=0
-let qtd=0
-
-vendas.forEach(v=>{
-
-let data=new Date(v.data).toLocaleDateString()
-
-if(data===hoje){
-
-total+=parseFloat(v.valor||0)
-qtd++
-
-}
-
-})
-
-document.getElementById("valorHoje").innerHTML="Total vendido hoje: R$ "+total
-document.getElementById("qtdHoje").innerHTML="Vendas hoje: "+qtd
-
-}
-
-function exportarBackup(){
-
-let dados={estoque,modelos,clientes,vendas,cancelamentos}
-
-let blob=new Blob([JSON.stringify(dados)],{type:"application/json"})
-
-let url=URL.createObjectURL(blob)
-
-let a=document.createElement("a")
-
-a.href=url
-a.download="leon_backup.json"
-
-a.click()
-
-}
-
-function importarBackup(e){
-
-let file=e.target.files[0]
-
-let reader=new FileReader()
-
-reader.onload=function(ev){
-
-let dados=JSON.parse(ev.target.result)
-
-estoque=dados.estoque||[]
-modelos=dados.modelos||[]
-clientes=dados.clientes||[]
-vendas=dados.vendas||[]
-cancelamentos=dados.cancelamentos||[]
-
-salvarDados()
-
-location.reload()
-
-}
-
-reader.readAsText(file)
-
-}
-
-carregarClientes()
-carregarModelos()
-carregarEstoque()
-carregarVendas()
-carregarCancelamentos()
-carregarDashboard()
 
 </script>
 
