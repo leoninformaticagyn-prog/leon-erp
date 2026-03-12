@@ -11,64 +11,25 @@
 
 <style>
 
-body{
-font-family:Arial;
-margin:0;
-background:#f4f6fa
-}
+body{font-family:Arial;margin:0;background:#f4f6fa}
 
-header{
-background:black;
-color:white;
-padding:15px;
-text-align:center
-}
+header{background:black;color:white;padding:15px;text-align:center}
 
-nav{
-display:flex;
-flex-wrap:wrap;
-gap:10px;
-padding:10px;
-justify-content:center;
-background:#222
-}
+nav{display:flex;flex-wrap:wrap;gap:10px;padding:10px;justify-content:center;background:#222}
 
-nav button{
-padding:10px;
-border:none;
-border-radius:5px;
-cursor:pointer
-}
+nav button{padding:10px;border:none;border-radius:5px;cursor:pointer}
 
-section{
-display:none;
-padding:20px
-}
+section{display:none;padding:20px}
 
-section.active{
-display:block
-}
+section.active{display:block}
 
-input,select{
-padding:8px;
-margin:5px;
-}
+input,select{padding:8px;margin:5px}
 
-table{
-width:100%;
-border-collapse:collapse;
-background:white
-}
+table{width:100%;border-collapse:collapse;background:white}
 
-th,td{
-border:1px solid #ddd;
-padding:8px
-}
+th,td{border:1px solid #ddd;padding:8px}
 
-#login{
-text-align:center;
-margin-top:120px
-}
+#login{text-align:center;margin-top:120px}
 
 </style>
 
@@ -136,6 +97,8 @@ margin-top:120px
 <input id="cor" placeholder="Cor">
 
 <button onclick="salvarModelo()">Salvar</button>
+
+<h4>Modelos cadastrados</h4>
 
 <div id="listaModelos"></div>
 
@@ -298,7 +261,6 @@ let p=document.getElementById("pass").value
 if(u==="Leon" && p==="Leon@017"){
 
 localStorage.setItem("logado","sim")
-
 location.reload()
 
 }else{
@@ -312,7 +274,6 @@ alert("login inválido")
 function logout(){
 
 localStorage.removeItem("logado")
-
 location.reload()
 
 }
@@ -320,7 +281,6 @@ location.reload()
 function show(id){
 
 document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
-
 document.getElementById(id).classList.add("active")
 
 }
@@ -328,7 +288,6 @@ document.getElementById(id).classList.add("active")
 function detectarTipo(c){
 
 if(c.length==15 && c.startsWith("35")) return "IMEI"
-
 if(c.length==17) return "SN"
 
 return "DESCONHECIDO"
@@ -382,6 +341,16 @@ carregarModelos()
 
 }
 
+function excluirModelo(id){
+
+if(!confirm("Excluir este modelo?")) return
+
+db.transaction("modelos","readwrite").objectStore("modelos").delete(id)
+
+carregarModelos()
+
+}
+
 function carregarModelos(){
 
 let lista=document.getElementById("listaModelos")
@@ -400,7 +369,12 @@ if(m){
 
 let txt=`${m.value.nome}|${m.value.cap}|${m.value.cor}`
 
-lista.innerHTML+=`${m.value.nome} ${m.value.cap} ${m.value.cor}<br>`
+lista.innerHTML+=`
+<div>
+${m.value.nome} ${m.value.cap} ${m.value.cor}
+<button onclick="excluirModelo(${m.key})">Excluir</button>
+</div>
+`
 
 s1.innerHTML+=`<option value="${txt}">${m.value.nome} ${m.value.cap} ${m.value.cor}</option>`
 s2.innerHTML+=`<option value="${txt}">${m.value.nome} ${m.value.cap} ${m.value.cor}</option>`
