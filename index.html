@@ -62,7 +62,7 @@ border:1px solid #ddd;
 padding:8px
 }
 
-select,input,textarea{
+select,input{
 padding:8px;
 margin:4px 0;
 width:100%;
@@ -105,7 +105,6 @@ cursor:pointer
 <h3>Leon Vendas</h3>
 
 <input id="user" placeholder="Usuário">
-
 <input id="pass" type="password" placeholder="Senha">
 
 <button onclick="login()">Entrar</button>
@@ -117,23 +116,18 @@ cursor:pointer
 <header>
 
 <h1>Leon Vendas</h1>
-
-<p>Sistema de Controle de iPhones</p>
+<p>Sistema de Controle de Smartphones</p>
 
 </header>
 
 <nav>
 
 <button onclick="show('dashboard')">Dashboard</button>
-
 <button onclick="show('estoque')">Estoque</button>
-
 <button onclick="show('scanner')">Scanner IMEI</button>
-
+<button onclick="show('modelos')">Modelos</button>
 <button onclick="show('venda')">Venda</button>
-
 <button onclick="show('financeiro')">Financeiro</button>
-
 <button onclick="logout()">Sair</button>
 
 </nav>
@@ -172,23 +166,30 @@ cursor:pointer
 
 </section>
 
+<section id="modelos">
+
+<h3>Cadastrar aparelho</h3>
+
+<input id="novoModelo" placeholder="Modelo (ex: iPhone 15)">
+<input id="novaCap" placeholder="Capacidade (ex: 256GB)">
+<input id="novaCor" placeholder="Cor (ex: Preto)">
+
+<button onclick="criarModelo()">Criar</button>
+
+<div id="listaModelos"></div>
+
+</section>
+
 <section id="scanner">
 
-<h3>Scanner de IMEI</h3>
+<h3>Scanner de IMEI (modo lote)</h3>
 
-<select id="modeloSelect">
-
-<option value="">Selecionar aparelho</option>
-
-<option value="iPhone 15|128GB|Preto">iPhone 15 128GB Preto</option>
-<option value="iPhone 15|256GB|Azul">iPhone 15 256GB Azul</option>
-<option value="iPhone 14|128GB|Branco">iPhone 14 128GB Branco</option>
-
-</select>
+<select id="modeloSelect"></select>
 
 <div id="reader"></div>
 
 <button onclick="startScanner()">Iniciar câmera</button>
+<button onclick="pararScanner()">Parar scanner</button>
 
 </section>
 
@@ -223,6 +224,7 @@ cursor:pointer
 <th>Cliente</th>
 <th>IMEI</th>
 <th>Valor</th>
+<th>Ação</th>
 </tr>
 
 </thead>
@@ -239,19 +241,9 @@ cursor:pointer
 
 let estoque = JSON.parse(localStorage.getItem("estoque")||"[]")
 let vendas = JSON.parse(localStorage.getItem("vendas")||"[]")
+let modelos = JSON.parse(localStorage.getItem("modelos")||"[]")
 
 let scanner
-
-function formatarMoeda(valor){
-
-let numero = valor.replace(/\./g,"").replace(",",".")
-numero = parseFloat(numero)
-
-if(isNaN(numero)) return "0,00"
-
-return numero.toLocaleString("pt-BR",{minimumFractionDigits:2})
-
-}
 
 function login(){
 
@@ -259,6 +251,7 @@ document.getElementById("loginScreen").style.display="none"
 document.getElementById("app").style.display="block"
 
 render()
+mostrarModelos()
 
 }
 
@@ -278,9 +271,39 @@ render()
 
 }
 
-function imeiExiste(imei){
+function criarModelo(){
 
-return estoque.some(p => p.imei===imei)
+let modelo=document.getElementById("novoModelo").value
+let cap=document.getElementById("novaCap").value
+let cor=document.getElementById("novaCor").value
+
+modelos.push({modelo,cap,cor})
+
+localStorage.setItem("modelos",JSON.stringify(modelos))
+
+mostrarModelos()
+
+alert("modelo criado com sucesso")
+
+}
+
+function mostrarModelos(){
+
+let lista=document.getElementById("listaModelos")
+let select=document.getElementById("modeloSelect")
+
+lista.innerHTML=""
+select.innerHTML="<option value=''>Selecionar aparelho</option>"
+
+modelos.forEach(m=>{
+
+lista.innerHTML+=`<div>${m.modelo} ${m.cap} ${m.cor}</div>`
+
+select.innerHTML+=`<option value="${m.modelo}|${m.cap}|${m.cor}">
+${m.modelo} ${m.cap} ${m.cor}
+</option>`
+
+})
 
 }
 
@@ -289,11 +312,8 @@ function startScanner(){
 let dados=document.getElementById("modeloSelect").value
 
 if(!dados){
-
 alert("selecionar aparelho")
-
 return
-
 }
 
 let partes=dados.split("|")
@@ -305,41 +325,30 @@ let cor=partes[2]
 scanner = new Html5Qrcode("reader")
 
 scanner.start(
-
 { facingMode: "environment" },
-
 { fps:10, qrbox:200 },
 
 (decodedText)=>{
 
-let codigo = decodedText.trim()
+let codigo=decodedText.trim()
 
-if(!/^[0-9]+$/.test(codigo)) return
 if(!codigo.startsWith("35")) return
 if(codigo.length!==15) return
 
-if(imeiExiste(codigo)){
-
-scanner.stop()
+if(estoque.some(p=>p.imei===codigo)){
 alert("IMEI já cadastrado")
-
 return
-
 }
 
 estoque.push({
-modelo:modelo,
-cap:cap,
-cor:cor,
+modelo,
+cap,
+cor,
 imei:codigo,
 status:"Estoque"
 })
 
 save()
-
-scanner.stop()
-
-alert("IMEI cadastrado com sucesso")
 
 }
 
@@ -347,10 +356,29 @@ alert("IMEI cadastrado com sucesso")
 
 }
 
+function pararScanner(){
+
+if(scanner){
+scanner.stop()
+}
+
+}
+
+function buscar(){
+
+let busca=document.getElementById("buscaImei").value
+
+let linhas=document.querySelectorAll("#estoqueBody tr")
+
+linhas.forEach(l=>{
+l.style.display=l.innerText.includes(busca)?"":"none"
+})
+
+}
+
 function buscarImeiVenda(){
 
 let busca=document.getElementById("imeiVenda").value
-
 let resultado=document.getElementById("resultadoBusca")
 
 resultado.innerHTML=""
@@ -362,13 +390,9 @@ estoque.forEach(p=>{
 if(p.imei.includes(busca) && p.status==="Estoque"){
 
 resultado.innerHTML+=`
-
 <div onclick="selecionarImei('${p.imei}')">
-
 ${p.modelo} ${p.cap} ${p.cor} - ${p.imei}
-
 </div>
-
 `
 
 }
@@ -380,8 +404,18 @@ ${p.modelo} ${p.cap} ${p.cor} - ${p.imei}
 function selecionarImei(imei){
 
 document.getElementById("imeiVenda").value=imei
-
 document.getElementById("resultadoBusca").innerHTML=""
+
+}
+
+function formatarMoeda(valor){
+
+let numero = valor.replace(/\./g,"").replace(",",".")
+numero = parseFloat(numero)
+
+if(isNaN(numero)) return "0,00"
+
+return numero.toLocaleString("pt-BR",{minimumFractionDigits:2})
 
 }
 
@@ -389,28 +423,22 @@ function vender(){
 
 let imei=document.getElementById("imeiVenda").value
 let cliente=document.getElementById("clienteVenda").value
-let valorBruto=document.getElementById("valorVenda").value
-
-let valor=formatarMoeda(valorBruto)
+let valor=formatarMoeda(document.getElementById("valorVenda").value)
 
 let aparelho = estoque.find(p=>p.imei===imei)
 
 if(!aparelho){
-
 alert("imei nao encontrado")
 return
-
 }
 
 aparelho.status="Vendido"
 
 vendas.push({
-
-imei:imei,
-cliente:cliente,
-valor:valor,
+imei,
+cliente,
+valor,
 data:new Date().toLocaleDateString()
-
 })
 
 save()
@@ -419,21 +447,19 @@ alert("venda concluida com sucesso")
 
 }
 
-function buscar(){
+function cancelarVenda(i){
 
-let busca=document.getElementById("buscaImei").value
+let venda=vendas[i]
 
-let linhas=document.querySelectorAll("#estoqueBody tr")
+let aparelho = estoque.find(p=>p.imei===venda.imei)
 
-linhas.forEach(l=>{
-
-if(l.innerText.includes(busca)){
-l.style.display=""
-}else{
-l.style.display="none"
+if(aparelho){
+aparelho.status="Estoque"
 }
 
-})
+vendas.splice(i,1)
+
+save()
 
 }
 
@@ -443,20 +469,16 @@ let tb=document.getElementById("estoqueBody")
 
 tb.innerHTML=""
 
-estoque.forEach((p)=>{
+estoque.forEach(p=>{
 
 tb.innerHTML+=`
-
 <tr>
-
 <td>${p.modelo}</td>
 <td>${p.cap}</td>
 <td>${p.cor}</td>
 <td>${p.imei}</td>
 <td>${p.status}</td>
-
 </tr>
-
 `
 
 })
@@ -467,22 +489,19 @@ let fb=document.getElementById("financeBody")
 
 fb.innerHTML=""
 
-vendas.forEach((v)=>{
+vendas.forEach((v,i)=>{
 
 let numero = parseFloat(v.valor.replace(/\./g,"").replace(",","."))
 total+=numero
 
 fb.innerHTML+=`
-
 <tr>
-
 <td>${v.data}</td>
 <td>${v.cliente}</td>
 <td>${v.imei}</td>
 <td>R$ ${v.valor}</td>
-
+<td><button onclick="cancelarVenda(${i})">Cancelar</button></td>
 </tr>
-
 `
 
 })
@@ -496,7 +515,6 @@ document.getElementById("stats").innerHTML="Em estoque: "+estoque.filter(x=>x.st
 function show(id){
 
 document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
-
 document.getElementById(id).classList.add("active")
 
 }
