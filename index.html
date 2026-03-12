@@ -69,8 +69,7 @@ margin:5px;
 width:100%;
 padding:20px;
 text-align:center;
-margin-top:60px;
-background:white;
+margin-top:40px;
 }
 
 </style>
@@ -89,6 +88,8 @@ background:white;
 <button onclick="login()">Entrar</button>
 
 </div>
+
+<div id="app" style="display:none;">
 
 <header>
 
@@ -191,6 +192,8 @@ background:white;
 
 </section>
 
+</div>
+
 <script>
 
 let estoque = JSON.parse(localStorage.getItem("estoque")||"[]")
@@ -217,6 +220,7 @@ let pass=document.getElementById("loginPass").value
 if(user==="Leon" && pass==="Leon@017"){
 
 document.getElementById("loginScreen").style.display="none"
+document.getElementById("app").style.display="block"
 
 }else{
 
