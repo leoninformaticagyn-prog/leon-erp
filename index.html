@@ -88,6 +88,12 @@ border-radius:10px
 width:300px
 }
 
+#resultadoBusca div{
+padding:6px;
+border-bottom:1px solid #ddd;
+cursor:pointer
+}
+
 </style>
 
 </head>
@@ -155,6 +161,7 @@ width:300px
 <tr>
 <th>Modelo</th>
 <th>Capacidade</th>
+<th>Cor</th>
 <th>IMEI</th>
 <th>Status</th>
 <th>Ações</th>
@@ -176,6 +183,8 @@ width:300px
 
 <input id="capacidade" placeholder="Capacidade">
 
+<input id="cor" placeholder="Cor">
+
 <textarea id="listaImei" rows="6" placeholder="IMEIs (1 por linha)"></textarea>
 
 <button onclick="importar()">Importar IMEIs</button>
@@ -186,17 +195,11 @@ width:300px
 
 <h3>Scanner de IMEI</h3>
 
-<input id="modeloScanner" placeholder="Modelo (ex: iPhone 15)">
+<input id="modeloScanner" placeholder="Modelo">
 
-<input id="capScanner" placeholder="Capacidade (ex: 256GB)">
+<input id="capScanner" placeholder="Capacidade">
 
-<div id="reader"></div>
-
-<button onclick="startScanner()">Iniciar câmera</button>
-
-</section>
-
-<h3>Scanner de IMEI</h3>
+<input id="corScanner" placeholder="Cor">
 
 <div id="reader"></div>
 
@@ -262,7 +265,7 @@ numero = parseFloat(numero)
 
 if(isNaN(numero)) return "0,00"
 
-return numero.toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2})
+return numero.toLocaleString("pt-BR",{minimumFractionDigits:2})
 
 }
 
@@ -301,6 +304,7 @@ function importar(){
 
 let modelo=document.getElementById("modelo").value
 let cap=document.getElementById("capacidade").value
+let cor=document.getElementById("cor").value
 
 let lista=document.getElementById("listaImei").value.split("\\n")
 
@@ -315,13 +319,10 @@ if(!imeiExiste(imei)){
 estoque.push({
 modelo:modelo,
 cap:cap,
+cor:cor,
 imei:imei,
 status:"Estoque"
 })
-
-}else{
-
-alert("IMEI duplicado: "+imei)
 
 }
 
@@ -358,9 +359,14 @@ return
 
 }
 
+let modelo=document.getElementById("modeloScanner").value
+let cap=document.getElementById("capScanner").value
+let cor=document.getElementById("corScanner").value
+
 estoque.push({
-modelo:"Scanner",
-cap:"",
+modelo:modelo,
+cap:cap,
+cor:cor,
 imei:codigo,
 status:"Estoque"
 })
@@ -369,7 +375,7 @@ save()
 
 scanner.stop()
 
-alert("IMEI cadastrado com sucesso: "+codigo)
+alert("IMEI cadastrado com sucesso")
 
 }
 
@@ -377,12 +383,48 @@ alert("IMEI cadastrado com sucesso: "+codigo)
 
 }
 
+function buscarImeiVenda(){
+
+let busca=document.getElementById("imeiVenda").value
+
+let resultado=document.getElementById("resultadoBusca")
+
+resultado.innerHTML=""
+
+if(busca.length<3) return
+
+estoque.forEach(p=>{
+
+if(p.imei.includes(busca) && p.status==="Estoque"){
+
+resultado.innerHTML+=`
+
+<div onclick="selecionarImei('${p.imei}')">
+
+${p.modelo} ${p.cap} ${p.cor} - ${p.imei}
+
+</div>
+
+`
+
+}
+
+})
+
+}
+
+function selecionarImei(imei){
+
+document.getElementById("imeiVenda").value=imei
+
+document.getElementById("resultadoBusca").innerHTML=""
+
+}
+
 function vender(){
 
 let imei=document.getElementById("imeiVenda").value
-
 let cliente=document.getElementById("clienteVenda").value
-
 let valorBruto=document.getElementById("valorVenda").value
 
 let valor=formatarMoeda(valorBruto)
@@ -464,11 +506,9 @@ tb.innerHTML+=`
 <tr>
 
 <td>${p.modelo}</td>
-
 <td>${p.cap}</td>
-
+<td>${p.cor}</td>
 <td>${p.imei}</td>
-
 <td>${p.status}</td>
 
 <td>
@@ -503,11 +543,8 @@ fb.innerHTML+=`
 <tr>
 
 <td>${v.data}</td>
-
 <td>${v.cliente}</td>
-
 <td>${v.imei}</td>
-
 <td>R$ ${v.valor}</td>
 
 <td>
