@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
 
 <meta charset="UTF-8">
@@ -68,7 +67,7 @@ padding:8px
 
 #login{
 text-align:center;
-margin-top:100px
+margin-top:120px
 }
 
 </style>
@@ -103,15 +102,14 @@ margin-top:100px
 <button onclick="show('manual')">Adicionar Manual</button>
 <button onclick="show('estoque')">Estoque</button>
 <button onclick="show('vendas')">Vendas</button>
+<button onclick="show('cancelamentos')">Cancelamentos</button>
 <button onclick="logout()">SAIR</button>
 
 </nav>
 
 <section id="dashboard" class="active">
 
-<h3>Caixa de Hoje</h3>
-
-<div id="caixa"></div>
+<h3>Sistema ativo</h3>
 
 </section>
 
@@ -203,7 +201,7 @@ margin-top:100px
 
 <button onclick="registrarVenda()">Registrar</button>
 
-<h3>Histórico</h3>
+<h3>Histórico de Vendas</h3>
 
 <table>
 
@@ -213,10 +211,35 @@ margin-top:100px
 <th>Código</th>
 <th>Valor</th>
 <th>Data</th>
+<th>Ação</th>
 </tr>
 </thead>
 
 <tbody id="tabelaVendas"></tbody>
+
+</table>
+
+</section>
+
+<section id="cancelamentos">
+
+<h3>Histórico de Cancelamentos</h3>
+
+<table>
+
+<thead>
+<tr>
+<th>Loja</th>
+<th>Comprador</th>
+<th>Código</th>
+<th>Valor</th>
+<th>Data Venda</th>
+<th>Data Cancelamento</th>
+<th>Motivo</th>
+</tr>
+</thead>
+
+<tbody id="tabelaCancelamentos"></tbody>
 
 </table>
 
@@ -238,6 +261,7 @@ db.createObjectStore("clientes",{keyPath:"id",autoIncrement:true})
 db.createObjectStore("modelos",{keyPath:"id",autoIncrement:true})
 db.createObjectStore("estoque",{keyPath:"codigo"})
 db.createObjectStore("vendas",{keyPath:"id",autoIncrement:true})
+db.createObjectStore("cancelamentos",{keyPath:"id",autoIncrement:true})
 
 }
 
@@ -262,6 +286,7 @@ carregarClientes()
 carregarModelos()
 carregarEstoque()
 carregarVendas()
+carregarCancelamentos()
 
 }
 
@@ -314,9 +339,7 @@ function salvarCliente(){
 
 let nome=document.getElementById("clienteNome").value
 
-let tx=db.transaction("clientes","readwrite")
-
-tx.objectStore("clientes").add({nome})
+db.transaction("clientes","readwrite").objectStore("clientes").add({nome})
 
 carregarClientes()
 
@@ -330,9 +353,7 @@ let select=document.getElementById("clienteVenda")
 lista.innerHTML=""
 select.innerHTML=""
 
-let tx=db.transaction("clientes")
-
-tx.objectStore("clientes").openCursor().onsuccess=function(e){
+db.transaction("clientes").objectStore("clientes").openCursor().onsuccess=function(e){
 
 let c=e.target.result
 
@@ -355,9 +376,7 @@ let nome=document.getElementById("modeloNome").value
 let cap=document.getElementById("capacidade").value
 let cor=document.getElementById("cor").value
 
-let tx=db.transaction("modelos","readwrite")
-
-tx.objectStore("modelos").add({nome,cap,cor})
+db.transaction("modelos","readwrite").objectStore("modelos").add({nome,cap,cor})
 
 carregarModelos()
 
@@ -373,20 +392,18 @@ lista.innerHTML=""
 s1.innerHTML=""
 s2.innerHTML=""
 
-let tx=db.transaction("modelos")
-
-tx.objectStore("modelos").openCursor().onsuccess=function(e){
+db.transaction("modelos").objectStore("modelos").openCursor().onsuccess=function(e){
 
 let m=e.target.result
 
 if(m){
 
+let txt=`${m.value.nome}|${m.value.cap}|${m.value.cor}`
+
 lista.innerHTML+=`${m.value.nome} ${m.value.cap} ${m.value.cor}<br>`
 
-let txt=`${m.value.nome} ${m.value.cap} ${m.value.cor}`
-
-s1.innerHTML+=`<option value="${txt}">${txt}</option>`
-s2.innerHTML+=`<option value="${txt}">${txt}</option>`
+s1.innerHTML+=`<option value="${txt}">${m.value.nome} ${m.value.cap} ${m.value.cor}</option>`
+s2.innerHTML+=`<option value="${txt}">${m.value.nome} ${m.value.cap} ${m.value.cor}</option>`
 
 m.continue()
 
@@ -398,21 +415,17 @@ m.continue()
 
 function adicionarManual(){
 
-let modelo=document.getElementById("modeloManual").value
+let modelo=document.getElementById("modeloManual").value.split("|")
+
+let nome=modelo[0]
+let cap=modelo[1]
+let cor=modelo[2]
 
 let codigo=document.getElementById("codigoManual").value
 
 let tipo=detectarTipo(codigo)
 
-let partes=modelo.split(" ")
-
-let nome=partes[0]
-let cap=partes[1]
-let cor=partes[2]
-
-let tx=db.transaction("estoque","readwrite")
-
-tx.objectStore("estoque").add({codigo,modelo:nome,cap,cor,tipo})
+db.transaction("estoque","readwrite").objectStore("estoque").add({codigo,modelo:nome,cap,cor,tipo})
 
 carregarEstoque()
 
@@ -420,13 +433,11 @@ carregarEstoque()
 
 function startScanner(){
 
-let modelo=document.getElementById("modeloScanner").value
+let modelo=document.getElementById("modeloScanner").value.split("|")
 
-let partes=modelo.split(" ")
-
-let nome=partes[0]
-let cap=partes[1]
-let cor=partes[2]
+let nome=modelo[0]
+let cap=modelo[1]
+let cor=modelo[2]
 
 const scanner=new Html5Qrcode("reader")
 
@@ -438,9 +449,9 @@ scanner.start(
 
 let tipo=detectarTipo(decodedText)
 
-let tx=db.transaction("estoque","readwrite")
-
-tx.objectStore("estoque").add({codigo:decodedText,modelo:nome,cap,cor,tipo})
+db.transaction("estoque","readwrite")
+.objectStore("estoque")
+.add({codigo:decodedText,modelo:nome,cap,cor,tipo})
 
 scanner.stop()
 
@@ -460,9 +471,7 @@ let tabela=document.getElementById("tabelaEstoque")
 
 tabela.innerHTML=""
 
-let tx=db.transaction("estoque")
-
-tx.objectStore("estoque").openCursor().onsuccess=function(e){
+db.transaction("estoque").objectStore("estoque").openCursor().onsuccess=function(e){
 
 let c=e.target.result
 
@@ -501,8 +510,48 @@ tx.objectStore("vendas").add({codigo,cliente,comprador,valor,data:new Date()})
 
 tx.objectStore("estoque").delete(codigo)
 
-carregarEstoque()
 carregarVendas()
+carregarEstoque()
+
+}
+
+function cancelarVenda(id){
+
+if(!confirm("Confirmar cancelamento da venda?")) return
+
+let motivo=prompt("Motivo do cancelamento")
+
+let tx=db.transaction(["vendas","cancelamentos","estoque"],"readwrite")
+
+let store=tx.objectStore("vendas")
+
+let req=store.get(id)
+
+req.onsuccess=function(){
+
+let venda=req.result
+
+tx.objectStore("cancelamentos").add({
+...venda,
+dataCancelamento:new Date(),
+motivo
+})
+
+tx.objectStore("estoque").add({
+codigo:venda.codigo,
+modelo:venda.modelo,
+cap:venda.cap,
+cor:venda.cor,
+tipo:venda.tipo
+})
+
+store.delete(id)
+
+carregarVendas()
+carregarCancelamentos()
+carregarEstoque()
+
+}
 
 }
 
@@ -512,9 +561,7 @@ let tabela=document.getElementById("tabelaVendas")
 
 tabela.innerHTML=""
 
-let tx=db.transaction("vendas")
-
-tx.objectStore("vendas").openCursor().onsuccess=function(e){
+db.transaction("vendas").objectStore("vendas").openCursor().onsuccess=function(e){
 
 let v=e.target.result
 
@@ -528,10 +575,45 @@ tabela.innerHTML+=`
 <td>${d.codigo}</td>
 <td>${d.valor}</td>
 <td>${new Date(d.data).toLocaleString()}</td>
+<td><button onclick="cancelarVenda(${v.key})">Cancelar</button></td>
 </tr>
 `
 
 v.continue()
+
+}
+
+}
+
+}
+
+function carregarCancelamentos(){
+
+let tabela=document.getElementById("tabelaCancelamentos")
+
+tabela.innerHTML=""
+
+db.transaction("cancelamentos").objectStore("cancelamentos").openCursor().onsuccess=function(e){
+
+let c=e.target.result
+
+if(c){
+
+let v=c.value
+
+tabela.innerHTML+=`
+<tr>
+<td>${v.cliente}</td>
+<td>${v.comprador}</td>
+<td>${v.codigo}</td>
+<td>${v.valor}</td>
+<td>${new Date(v.data).toLocaleString()}</td>
+<td>${new Date(v.dataCancelamento).toLocaleString()}</td>
+<td>${v.motivo}</td>
+</tr>
+`
+
+c.continue()
 
 }
 
