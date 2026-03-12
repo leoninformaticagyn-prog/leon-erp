@@ -1,66 +1,161 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Leon Vendas</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-body{font-family:Arial;margin:0;background:#f4f6fa}
-header{background:#000;color:white;padding:16px;text-align:center}
-nav{background:#1f1f1f;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:10px}
-nav button{padding:10px;border:none;border-radius:6px;background:white;cursor:pointer}
-section{display:none;padding:18px}
-section.active{display:block}
-table{width:100%;border-collapse:collapse;background:white}
-th,td{border:1px solid #ddd;padding:8px}
-input,textarea{padding:8px;margin:4px 0;width:100%;max-width:420px}
-button.small{font-size:12px;padding:4px 6px}
-.card{background:white;padding:12px;border-radius:8px;margin:10px 0}
-.login{max-width:360px;margin:120px auto;background:white;padding:20px;border-radius:10px}
-#reader{width:300px}
+
+body{
+font-family:Arial;
+margin:0;
+background:#f4f6fa
+}
+
+header{
+background:#000;
+color:white;
+padding:16px;
+text-align:center
+}
+
+nav{
+background:#1f1f1f;
+display:flex;
+flex-wrap:wrap;
+gap:8px;
+justify-content:center;
+padding:10px
+}
+
+nav button{
+padding:10px;
+border:none;
+border-radius:6px;
+background:white;
+cursor:pointer
+}
+
+section{
+display:none;
+padding:18px
+}
+
+section.active{
+display:block
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+background:white
+}
+
+th,td{
+border:1px solid #ddd;
+padding:8px
+}
+
+input,textarea{
+padding:8px;
+margin:4px 0;
+width:100%;
+max-width:420px
+}
+
+button.small{
+font-size:12px;
+padding:4px 6px
+}
+
+.card{
+background:white;
+padding:12px;
+border-radius:8px;
+margin:10px 0
+}
+
+.login{
+max-width:360px;
+margin:120px auto;
+background:white;
+padding:20px;
+border-radius:10px
+}
+
+#reader{
+width:300px
+}
+
 </style>
+
 </head>
 
 <body>
 
 <div id="loginScreen" class="login">
+
 <h3>Leon Vendas</h3>
+
 <input id="user" placeholder="Usuário">
+
 <input id="pass" type="password" placeholder="Senha">
+
 <button onclick="login()">Entrar</button>
-<p id="loginMsg" style="color:red"></p>
+
 </div>
 
 <div id="app" style="display:none">
 
 <header>
+
 <h1>Leon Vendas</h1>
+
 <p>Sistema de Controle de iPhones</p>
+
 </header>
 
 <nav>
+
 <button onclick="show('dashboard')">Dashboard</button>
+
 <button onclick="show('estoque')">Estoque</button>
+
 <button onclick="show('entrada')">Entrada Lote</button>
+
 <button onclick="show('scanner')">Scanner IMEI</button>
+
 <button onclick="show('venda')">Venda</button>
+
 <button onclick="show('financeiro')">Financeiro</button>
+
 <button onclick="logout()">Sair</button>
+
 </nav>
 
 <section id="dashboard" class="active">
+
 <h3>Resumo</h3>
+
 <div class="card" id="stats"></div>
+
 </section>
 
 <section id="estoque">
+
 <h3>Estoque</h3>
+
 <input id="buscaImei" placeholder="Buscar IMEI" onkeyup="buscar()">
+
 <table>
+
 <thead>
+
 <tr>
 <th>Modelo</th>
 <th>Capacidade</th>
@@ -68,39 +163,63 @@ button.small{font-size:12px;padding:4px 6px}
 <th>Status</th>
 <th>Ações</th>
 </tr>
+
 </thead>
+
 <tbody id="estoqueBody"></tbody>
+
 </table>
+
 </section>
 
 <section id="entrada">
+
 <h3>Entrada de Lote</h3>
+
 <input id="modelo" placeholder="Modelo">
+
 <input id="capacidade" placeholder="Capacidade">
+
 <textarea id="listaImei" rows="6" placeholder="IMEIs (1 por linha)"></textarea>
+
 <button onclick="importar()">Importar IMEIs</button>
-<p id="alerta" style="color:red"></p>
+
 </section>
 
 <section id="scanner">
+
 <h3>Scanner de IMEI</h3>
+
 <div id="reader"></div>
+
 <button onclick="startScanner()">Iniciar câmera</button>
+
 </section>
 
 <section id="venda">
+
 <h3>Registrar Venda</h3>
+
 <input id="imeiVenda" placeholder="IMEI">
+
 <input id="clienteVenda" placeholder="Cliente">
+
 <input id="valorVenda" placeholder="Valor">
+
 <button onclick="vender()">Registrar</button>
+
 </section>
 
 <section id="financeiro">
+
 <h3>Financeiro</h3>
+
 <div id="caixaTotal"></div>
+
 <table>
+
 <thead>
+
 <tr>
 <th>Data</th>
 <th>Cliente</th>
@@ -108,9 +227,13 @@ button.small{font-size:12px;padding:4px 6px}
 <th>Valor</th>
 <th>Ação</th>
 </tr>
+
 </thead>
+
 <tbody id="financeBody"></tbody>
+
 </table>
+
 </section>
 
 </div>
@@ -118,67 +241,123 @@ button.small{font-size:12px;padding:4px 6px}
 <script>
 
 let estoque = JSON.parse(localStorage.getItem("estoque")||"[]")
+
 let vendas = JSON.parse(localStorage.getItem("vendas")||"[]")
 
+let scanner
+
 function login(){
+
 document.getElementById("loginScreen").style.display="none"
+
 document.getElementById("app").style.display="block"
+
 render()
+
 }
 
 function logout(){
+
 document.getElementById("app").style.display="none"
+
 document.getElementById("loginScreen").style.display="block"
+
 }
 
 function save(){
+
 localStorage.setItem("estoque",JSON.stringify(estoque))
+
 localStorage.setItem("vendas",JSON.stringify(vendas))
+
 render()
+
 }
 
 function imeiExiste(imei){
+
 return estoque.some(p => p.imei===imei)
+
 }
 
 function importar(){
 
 let modelo=document.getElementById("modelo").value
+
 let cap=document.getElementById("capacidade").value
+
 let lista=document.getElementById("listaImei").value.split("\\n")
 
 lista.forEach(i=>{
+
 let imei=i.trim()
+
 if(!imei) return
 
 if(!imeiExiste(imei)){
-estoque.push({modelo:modelo,cap:cap,imei:imei,status:"Estoque"})
+
+estoque.push({
+modelo:modelo,
+cap:cap,
+imei:imei,
+status:"Estoque"
+})
+
 }else{
+
 alert("IMEI duplicado: "+imei)
+
 }
 
 })
 
 save()
+
 }
 
 function startScanner(){
 
-const scanner = new Html5Qrcode("reader")
+scanner = new Html5Qrcode("reader")
 
 scanner.start(
+
 { facingMode: "environment" },
-{ fps: 10, qrbox: 250 },
-(decodedText) => {
 
-if(!imeiExiste(decodedText)){
-estoque.push({modelo:"Scanner",cap:"",imei:decodedText,status:"Estoque"})
-save()
-}else{
+{ fps:10, qrbox:200 },
+
+(decodedText)=>{
+
+let codigo = decodedText.trim()
+
+if(!/^[0-9]+$/.test(codigo)) return
+
+if(!codigo.startsWith("35")) return
+
+if(codigo.length!==15) return
+
+if(imeiExiste(codigo)){
+
 alert("IMEI já cadastrado")
-}
+
+return
 
 }
+
+estoque.push({
+modelo:"Scanner",
+cap:"",
+imei:codigo,
+status:"Estoque"
+})
+
+save()
+
+alert("IMEI cadastrado com sucesso: "+codigo)
+
+scanner.stop()
+
+}
+
 )
 
 }
@@ -186,23 +365,30 @@ alert("IMEI já cadastrado")
 function vender(){
 
 let imei=document.getElementById("imeiVenda").value
+
 let cliente=document.getElementById("clienteVenda").value
+
 let valor=document.getElementById("valorVenda").value
 
 let aparelho = estoque.find(p=>p.imei===imei)
 
 if(!aparelho){
+
 alert("IMEI não encontrado")
+
 return
+
 }
 
 aparelho.status="Vendido"
 
 vendas.push({
+
 imei:imei,
 cliente:cliente,
 valor:valor,
 data:new Date().toLocaleDateString()
+
 })
 
 save()
@@ -216,7 +402,9 @@ let venda=vendas[i]
 let aparelho = estoque.find(p=>p.imei===venda.imei)
 
 if(aparelho){
+
 aparelho.status="Estoque"
+
 }
 
 vendas.splice(i,1)
@@ -234,9 +422,13 @@ let linhas=document.querySelectorAll("#estoqueBody tr")
 linhas.forEach(l=>{
 
 if(l.innerText.includes(busca)){
+
 l.style.display=""
+
 }else{
+
 l.style.display="none"
+
 }
 
 })
@@ -254,15 +446,26 @@ tb.innerHTML=""
 estoque.forEach((p,i)=>{
 
 tb.innerHTML+=`
+
 <tr>
+
 <td>${p.modelo}</td>
+
 <td>${p.cap}</td>
+
 <td>${p.imei}</td>
+
 <td>${p.status}</td>
+
 <td>
+
 <button onclick="excluir(${i})">Excluir</button>
+
 </td>
-</tr>`
+
+</tr>
+
+`
 
 })
 
@@ -281,15 +484,26 @@ vendas.forEach((v,i)=>{
 total+=Number(v.valor)
 
 fb.innerHTML+=`
+
 <tr>
+
 <td>${v.data}</td>
+
 <td>${v.cliente}</td>
+
 <td>${v.imei}</td>
+
 <td>R$ ${v.valor}</td>
+
 <td>
+
 <button onclick="cancelarVenda(${i})">Cancelar</button>
+
 </td>
-</tr>`
+
+</tr>
+
+`
 
 })
 
@@ -298,6 +512,7 @@ fb.innerHTML+=`
 document.getElementById("caixaTotal").innerHTML="Caixa total: R$ "+total
 
 let estoqueQtd=estoque.filter(x=>x.status==="Estoque").length
+
 let vendidos=estoque.filter(x=>x.status==="Vendido").length
 
 document.getElementById("stats").innerHTML="Em estoque: "+estoqueQtd+" | Vendidos: "+vendidos
@@ -307,8 +522,11 @@ document.getElementById("stats").innerHTML="Em estoque: "+estoqueQtd+" | Vendido
 function excluir(i){
 
 if(confirm("Excluir aparelho?")){
+
 estoque.splice(i,1)
+
 save()
+
 }
 
 }
