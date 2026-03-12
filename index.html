@@ -156,6 +156,7 @@ margin-top:40px;
 <th>Cor</th>
 <th>IMEI</th>
 <th>Status</th>
+<th>Ação</th>
 </tr>
 
 </thead>
@@ -361,7 +362,7 @@ let tabela=document.getElementById("tabelaEstoque")
 
 tabela.innerHTML=""
 
-estoque.forEach(p=>{
+estoque.forEach((p,index)=>{
 
 tabela.innerHTML+=`
 <tr>
@@ -370,10 +371,25 @@ tabela.innerHTML+=`
 <td>${p.cor}</td>
 <td>${p.imei}</td>
 <td>${p.status}</td>
+<td><button onclick="excluirEstoque(${index})">Excluir</button></td>
 </tr>
 `
 
 })
+
+}
+
+function excluirEstoque(index){
+
+if(!confirm("Excluir este aparelho do estoque?")) return
+
+estoque.splice(index,1)
+
+salvarDados()
+
+carregarEstoque()
+
+carregarDashboard()
 
 }
 
