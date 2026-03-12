@@ -72,6 +72,13 @@ text-align:center;
 margin-top:40px;
 }
 
+.caixaBox{
+background:white;
+padding:20px;
+margin-bottom:20px;
+border-radius:6px;
+}
+
 </style>
 
 </head>
@@ -92,9 +99,7 @@ margin-top:40px;
 <div id="app" style="display:none;">
 
 <header>
-
 <h2>Leon Vendas</h2>
-
 </header>
 
 <nav>
@@ -109,6 +114,15 @@ margin-top:40px;
 </nav>
 
 <section id="dashboard" class="active">
+
+<div class="caixaBox">
+
+<h3>CAIXA DE HOJE</h3>
+
+<div id="valorHoje"></div>
+<div id="qtdHoje"></div>
+
+</div>
 
 <h3>Estoque por modelo</h3>
 
@@ -458,8 +472,6 @@ vendas.push({
 cliente,
 imei,
 modelo:aparelho.modelo,
-cap:aparelho.cap,
-cor:aparelho.cor,
 valor,
 data:new Date()
 })
@@ -504,8 +516,6 @@ let venda=vendas[index]
 
 estoque.push({
 modelo:venda.modelo,
-cap:venda.cap,
-cor:venda.cor,
 imei:venda.imei
 })
 
@@ -544,6 +554,29 @@ html+=modelo+" — "+contagem[modelo]+" aparelhos<br>"
 }
 
 painel.innerHTML=html
+
+let hoje = new Date().toLocaleDateString()
+
+let total = 0
+let qtd = 0
+
+vendas.forEach(v=>{
+
+let data = new Date(v.data).toLocaleDateString()
+
+if(data===hoje){
+
+let valor = parseFloat(v.valor.replace(".","").replace(",","."))
+
+total += valor
+qtd++
+
+}
+
+})
+
+document.getElementById("valorHoje").innerHTML = "Total vendido hoje: R$ "+total.toLocaleString("pt-BR",{minimumFractionDigits:2})
+document.getElementById("qtdHoje").innerHTML = "Vendas hoje: "+qtd
 
 }
 
