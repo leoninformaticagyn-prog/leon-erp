@@ -6,9 +6,35 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Leon Vendas</title>
+<title>Leon Vendas Cloud</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyADPuE6CYEKQOjgJH4RYcNMjzMKiZoSnGU",
+authDomain: "leon-vendas-ac514.firebaseapp.com",
+projectId: "leon-vendas-ac514",
+storageBucket: "leon-vendas-ac514.firebasestorage.app",
+messagingSenderId: "537113092633",
+appId: "1:537113092633:web:1af34305a5beffc05d0088"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.db=db
+window.collection=collection
+window.addDoc=addDoc
+window.getDocs=getDocs
+window.deleteDoc=deleteDoc
+window.doc=doc
+
+</script>
 
 <style>
 
@@ -19,32 +45,30 @@ background:#f4f6fa
 }
 
 header{
-background:#000;
+background:black;
 color:white;
-padding:16px;
+padding:15px;
 text-align:center
 }
 
 nav{
-background:#1f1f1f;
 display:flex;
-flex-wrap:wrap;
-gap:8px;
+gap:10px;
+padding:10px;
 justify-content:center;
-padding:10px
+background:#222
 }
 
 nav button{
 padding:10px;
 border:none;
-border-radius:6px;
-background:white;
+border-radius:5px;
 cursor:pointer
 }
 
 section{
 display:none;
-padding:18px
+padding:20px
 }
 
 section.active{
@@ -62,36 +86,9 @@ border:1px solid #ddd;
 padding:8px
 }
 
-select,input{
+input,select{
 padding:8px;
-margin:4px 0;
-width:100%;
-max-width:420px
-}
-
-.card{
-background:white;
-padding:12px;
-border-radius:8px;
-margin:10px 0
-}
-
-.login{
-max-width:360px;
-margin:120px auto;
-background:white;
-padding:20px;
-border-radius:10px
-}
-
-#reader{
-width:300px
-}
-
-#resultadoBusca div{
-padding:6px;
-border-bottom:1px solid #ddd;
-cursor:pointer
+margin:5px;
 }
 
 </style>
@@ -100,43 +97,41 @@ cursor:pointer
 
 <body>
 
-<div id="loginScreen" class="login">
-
-<h3>Leon Vendas</h3>
-
-<input id="user" placeholder="Usuário">
-<input id="pass" type="password" placeholder="Senha">
-
-<button onclick="login()">Entrar</button>
-
-</div>
-
-<div id="app" style="display:none">
-
 <header>
 
-<h1>Leon Vendas</h1>
-<p>Sistema de Controle de Smartphones</p>
+<h2>Leon Vendas Cloud</h2>
 
 </header>
 
 <nav>
 
 <button onclick="show('dashboard')">Dashboard</button>
-<button onclick="show('estoque')">Estoque</button>
-<button onclick="show('scanner')">Scanner IMEI</button>
 <button onclick="show('modelos')">Modelos</button>
-<button onclick="show('venda')">Venda</button>
-<button onclick="show('financeiro')">Financeiro</button>
-<button onclick="logout()">Sair</button>
+<button onclick="show('estoque')">Estoque</button>
+<button onclick="show('scanner')">Scanner</button>
+<button onclick="show('vendas')">Vendas</button>
 
 </nav>
 
 <section id="dashboard" class="active">
 
-<h3>Resumo</h3>
+<h3>Estoque por modelo</h3>
 
-<div class="card" id="stats"></div>
+<div id="painelModelos"></div>
+
+</section>
+
+<section id="modelos">
+
+<h3>Criar Modelo</h3>
+
+<input id="modelo" placeholder="Modelo">
+<input id="capacidade" placeholder="Capacidade">
+<input id="cor" placeholder="Cor">
+
+<button onclick="criarModelo()">Salvar</button>
+
+<div id="listaModelos"></div>
 
 </section>
 
@@ -144,15 +139,13 @@ cursor:pointer
 
 <h3>Estoque</h3>
 
-<input id="buscaImei" placeholder="Buscar IMEI" onkeyup="buscar()">
-
 <table>
 
 <thead>
 
 <tr>
 <th>Modelo</th>
-<th>Capacidade</th>
+<th>Cap</th>
 <th>Cor</th>
 <th>IMEI</th>
 <th>Status</th>
@@ -160,148 +153,84 @@ cursor:pointer
 
 </thead>
 
-<tbody id="estoqueBody"></tbody>
+<tbody id="tabelaEstoque"></tbody>
 
 </table>
-
-</section>
-
-<section id="modelos">
-
-<h3>Cadastrar aparelho</h3>
-
-<input id="novoModelo" placeholder="Modelo (ex: iPhone 15)">
-<input id="novaCap" placeholder="Capacidade (ex: 256GB)">
-<input id="novaCor" placeholder="Cor (ex: Preto)">
-
-<button onclick="criarModelo()">Criar</button>
-
-<div id="listaModelos"></div>
 
 </section>
 
 <section id="scanner">
 
-<h3>Scanner de IMEI (modo lote)</h3>
+<h3>Scanner IMEI</h3>
 
-<select id="modeloSelect"></select>
+<select id="modeloScanner"></select>
 
 <div id="reader"></div>
 
-<button onclick="startScanner()">Iniciar câmera</button>
-<button onclick="pararScanner()">Parar scanner</button>
+<button onclick="startScanner()">Iniciar</button>
 
 </section>
 
-<section id="venda">
+<section id="vendas">
 
 <h3>Registrar Venda</h3>
 
-<input id="imeiVenda" placeholder="buscar imei" onkeyup="buscarImeiVenda()">
-
-<div id="resultadoBusca"></div>
-
-<input id="clienteVenda" placeholder="Cliente">
-
+<input id="imeiVenda" placeholder="IMEI">
 <input id="valorVenda" placeholder="Valor">
 
-<button onclick="vender()">Registrar</button>
+<button onclick="registrarVenda()">Registrar</button>
 
 </section>
-
-<section id="financeiro">
-
-<h3>Financeiro</h3>
-
-<div id="caixaTotal"></div>
-
-<table>
-
-<thead>
-
-<tr>
-<th>Data</th>
-<th>Cliente</th>
-<th>IMEI</th>
-<th>Valor</th>
-<th>Ação</th>
-</tr>
-
-</thead>
-
-<tbody id="financeBody"></tbody>
-
-</table>
-
-</section>
-
-</div>
 
 <script>
 
-let estoque = JSON.parse(localStorage.getItem("estoque")||"[]")
-let vendas = JSON.parse(localStorage.getItem("vendas")||"[]")
-let modelos = JSON.parse(localStorage.getItem("modelos")||"[]")
-
 let scanner
 
-function login(){
+function show(id){
 
-document.getElementById("loginScreen").style.display="none"
-document.getElementById("app").style.display="block"
+document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
 
-render()
-mostrarModelos()
+document.getElementById(id).classList.add("active")
 
 }
 
-function logout(){
+async function criarModelo(){
 
-document.getElementById("app").style.display="none"
-document.getElementById("loginScreen").style.display="block"
+let modelo=document.getElementById("modelo").value
+let cap=document.getElementById("capacidade").value
+let cor=document.getElementById("cor").value
 
-}
+await addDoc(collection(db,"modelos"),{
+modelo,
+cap,
+cor
+})
 
-function save(){
+alert("modelo criado")
 
-localStorage.setItem("estoque",JSON.stringify(estoque))
-localStorage.setItem("vendas",JSON.stringify(vendas))
-
-render()
-
-}
-
-function criarModelo(){
-
-let modelo=document.getElementById("novoModelo").value
-let cap=document.getElementById("novaCap").value
-let cor=document.getElementById("novaCor").value
-
-modelos.push({modelo,cap,cor})
-
-localStorage.setItem("modelos",JSON.stringify(modelos))
-
-mostrarModelos()
-
-alert("modelo criado com sucesso")
+carregarModelos()
 
 }
 
-function mostrarModelos(){
+async function carregarModelos(){
 
+let select=document.getElementById("modeloScanner")
 let lista=document.getElementById("listaModelos")
-let select=document.getElementById("modeloSelect")
 
+select.innerHTML=""
 lista.innerHTML=""
-select.innerHTML="<option value=''>Selecionar aparelho</option>"
 
-modelos.forEach(m=>{
+const query=await getDocs(collection(db,"modelos"))
 
-lista.innerHTML+=`<div>${m.modelo} ${m.cap} ${m.cor}</div>`
+query.forEach(doc=>{
+
+let m=doc.data()
 
 select.innerHTML+=`<option value="${m.modelo}|${m.cap}|${m.cor}">
 ${m.modelo} ${m.cap} ${m.cor}
 </option>`
+
+lista.innerHTML+=`<div>${m.modelo} ${m.cap} ${m.cor}</div>`
 
 })
 
@@ -309,12 +238,7 @@ ${m.modelo} ${m.cap} ${m.cor}
 
 function startScanner(){
 
-let dados=document.getElementById("modeloSelect").value
-
-if(!dados){
-alert("selecionar aparelho")
-return
-}
+let dados=document.getElementById("modeloScanner").value
 
 let partes=dados.split("|")
 
@@ -325,30 +249,25 @@ let cor=partes[2]
 scanner = new Html5Qrcode("reader")
 
 scanner.start(
-{ facingMode: "environment" },
-{ fps:10, qrbox:200 },
+{ facingMode:"environment" },
+{ fps:10, qrbox:250 },
 
-(decodedText)=>{
+async (decodedText)=>{
 
-let codigo=decodedText.trim()
+if(!decodedText.startsWith("35")) return
+if(decodedText.length!==15) return
 
-if(!codigo.startsWith("35")) return
-if(codigo.length!==15) return
+await addDoc(collection(db,"estoque"),{
 
-if(estoque.some(p=>p.imei===codigo)){
-alert("IMEI já cadastrado")
-return
-}
-
-estoque.push({
 modelo,
 cap,
 cor,
-imei:codigo,
+imei:decodedText,
 status:"Estoque"
+
 })
 
-save()
+alert("IMEI cadastrado")
 
 }
 
@@ -356,122 +275,19 @@ save()
 
 }
 
-function pararScanner(){
+async function carregarEstoque(){
 
-if(scanner){
-scanner.stop()
-}
+let tabela=document.getElementById("tabelaEstoque")
 
-}
+tabela.innerHTML=""
 
-function buscar(){
+const query=await getDocs(collection(db,"estoque"))
 
-let busca=document.getElementById("buscaImei").value
+query.forEach(doc=>{
 
-let linhas=document.querySelectorAll("#estoqueBody tr")
+let p=doc.data()
 
-linhas.forEach(l=>{
-l.style.display=l.innerText.includes(busca)?"":"none"
-})
-
-}
-
-function buscarImeiVenda(){
-
-let busca=document.getElementById("imeiVenda").value
-let resultado=document.getElementById("resultadoBusca")
-
-resultado.innerHTML=""
-
-if(busca.length<3) return
-
-estoque.forEach(p=>{
-
-if(p.imei.includes(busca) && p.status==="Estoque"){
-
-resultado.innerHTML+=`
-<div onclick="selecionarImei('${p.imei}')">
-${p.modelo} ${p.cap} ${p.cor} - ${p.imei}
-</div>
-`
-
-}
-
-})
-
-}
-
-function selecionarImei(imei){
-
-document.getElementById("imeiVenda").value=imei
-document.getElementById("resultadoBusca").innerHTML=""
-
-}
-
-function formatarMoeda(valor){
-
-let numero = valor.replace(/\./g,"").replace(",",".")
-numero = parseFloat(numero)
-
-if(isNaN(numero)) return "0,00"
-
-return numero.toLocaleString("pt-BR",{minimumFractionDigits:2})
-
-}
-
-function vender(){
-
-let imei=document.getElementById("imeiVenda").value
-let cliente=document.getElementById("clienteVenda").value
-let valor=formatarMoeda(document.getElementById("valorVenda").value)
-
-let aparelho = estoque.find(p=>p.imei===imei)
-
-if(!aparelho){
-alert("imei nao encontrado")
-return
-}
-
-aparelho.status="Vendido"
-
-vendas.push({
-imei,
-cliente,
-valor,
-data:new Date().toLocaleDateString()
-})
-
-save()
-
-alert("venda concluida com sucesso")
-
-}
-
-function cancelarVenda(i){
-
-let venda=vendas[i]
-
-let aparelho = estoque.find(p=>p.imei===venda.imei)
-
-if(aparelho){
-aparelho.status="Estoque"
-}
-
-vendas.splice(i,1)
-
-save()
-
-}
-
-function render(){
-
-let tb=document.getElementById("estoqueBody")
-
-tb.innerHTML=""
-
-estoque.forEach(p=>{
-
-tb.innerHTML+=`
+tabela.innerHTML+=`
 <tr>
 <td>${p.modelo}</td>
 <td>${p.cap}</td>
@@ -483,43 +299,27 @@ tb.innerHTML+=`
 
 })
 
-let total=0
+}
 
-let fb=document.getElementById("financeBody")
+async function registrarVenda(){
 
-fb.innerHTML=""
+let imei=document.getElementById("imeiVenda").value
+let valor=document.getElementById("valorVenda").value
 
-vendas.forEach((v,i)=>{
+await addDoc(collection(db,"vendas"),{
 
-let numero = parseFloat(v.valor.replace(/\./g,"").replace(",","."))
-total+=numero
-
-fb.innerHTML+=`
-<tr>
-<td>${v.data}</td>
-<td>${v.cliente}</td>
-<td>${v.imei}</td>
-<td>R$ ${v.valor}</td>
-<td><button onclick="cancelarVenda(${i})">Cancelar</button></td>
-</tr>
-`
+imei,
+valor,
+data:new Date()
 
 })
 
-document.getElementById("caixaTotal").innerHTML="Caixa total: R$ "+total.toLocaleString("pt-BR",{minimumFractionDigits:2})
-
-document.getElementById("stats").innerHTML="Em estoque: "+estoque.filter(x=>x.status==="Estoque").length+" | Vendidos: "+estoque.filter(x=>x.status==="Vendido").length
+alert("venda concluida com sucesso")
 
 }
 
-function show(id){
-
-document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
-document.getElementById(id).classList.add("active")
-
-}
-
-render()
+carregarModelos()
+carregarEstoque()
 
 </script>
 
