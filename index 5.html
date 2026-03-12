@@ -1,0 +1,305 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leon ERP v6.3</title>
+<style>
+body{font-family:Arial;margin:0;background:#eef2f7}
+header{background:#111;color:#fff;padding:14px;text-align:center}
+nav{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;background:#222;padding:10px}
+nav button{padding:10px;border:none;border-radius:6px;background:#fff;cursor:pointer}
+section{display:none;padding:16px}
+section.active{display:block}
+table{width:100%;border-collapse:collapse;background:#fff;margin-top:10px}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+button.small{padding:4px 6px;font-size:12px}
+.login{max-width:350px;margin:120px auto;background:#fff;padding:20px;border-radius:10px}
+input,textarea{padding:8px;margin:4px 0;width:100%;max-width:420px}
+.alert{color:red;font-weight:bold}
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="login">
+<h3>Login ERP Leon</h3>
+<input id="user" placeholder="Usuário">
+<input id="pass" type="password" placeholder="Senha">
+<button onclick="login()">Entrar</button>
+<p id="loginMsg" class="alert"></p>
+</div>
+
+<div id="app" style="display:none">
+
+<header>
+<h2>Leon ERP v6.3</h2>
+</header>
+
+<nav>
+<button onclick="show('dashboard')">Dashboard</button>
+<button onclick="show('estoque')">Estoque</button>
+<button onclick="show('lote')">Entrada Lote</button>
+<button onclick="show('venda')">Registrar Venda</button>
+<button onclick="show('financeiro')">Financeiro</button>
+<button onclick="show('senha')">Alterar Senha</button>
+<button onclick="logout()">Logout</button>
+</nav>
+
+<section id="dashboard" class="active">
+<h3>Dashboard</h3>
+<div id="stats"></div>
+</section>
+
+<section id="estoque">
+<h3>Estoque</h3>
+<table>
+<thead>
+<tr>
+<th>Modelo</th>
+<th>Capacidade</th>
+<th>IMEI</th>
+<th>Status</th>
+<th>Ações</th>
+</tr>
+</thead>
+<tbody id="estoqueBody"></tbody>
+</table>
+</section>
+
+<section id="lote">
+<h3>Entrada de lote</h3>
+<input id="modeloLote" placeholder="Modelo">
+<input id="capLote" placeholder="Capacidade">
+<textarea id="listaImei" rows="6" placeholder="IMEIs (1 por linha)"></textarea>
+<button onclick="importarLote()">Importar</button>
+<p id="imeiAlert" class="alert"></p>
+</section>
+
+<section id="venda">
+<h3>Registrar venda</h3>
+<input id="imeiVenda" placeholder="IMEI">
+<input id="clienteVenda" placeholder="Cliente">
+<input id="valorVenda" placeholder="Valor (R$)">
+<button onclick="registrarVenda()">Registrar venda</button>
+</section>
+
+<section id="financeiro">
+<h3>Financeiro</h3>
+<div id="totalCaixa"></div>
+<table>
+<thead>
+<tr>
+<th>Data</th>
+<th>Cliente</th>
+<th>IMEI</th>
+<th>Valor</th>
+<th>Ação</th>
+</tr>
+</thead>
+<tbody id="financeBody"></tbody>
+</table>
+</section>
+
+<section id="senha">
+<h3>Alterar senha</h3>
+<input id="novaSenha" type="password" placeholder="Nova senha">
+<button onclick="alterarSenha()">Salvar nova senha</button>
+<p id="senhaMsg"></p>
+</section>
+
+</div>
+
+<script>
+
+let loginData = JSON.parse(localStorage.getItem("loginData") || '{"user":"admin","pass":"1234"}')
+let estoque = JSON.parse(localStorage.getItem("estoque") || "[]")
+let vendas = JSON.parse(localStorage.getItem("vendas") || "[]")
+
+function login(){
+let u=document.getElementById("user").value
+let p=document.getElementById("pass").value
+if(u===loginData.user && p===loginData.pass){
+document.getElementById("loginScreen").style.display="none"
+document.getElementById("app").style.display="block"
+render()
+}else{
+document.getElementById("loginMsg").innerText="Usuário ou senha incorreto"
+}
+}
+
+function logout(){
+document.getElementById("app").style.display="none"
+document.getElementById("loginScreen").style.display="block"
+}
+
+function alterarSenha(){
+let nova=document.getElementById("novaSenha").value
+if(!nova){
+document.getElementById("senhaMsg").innerText="Digite uma senha válida"
+return
+}
+loginData.pass = nova
+localStorage.setItem("loginData",JSON.stringify(loginData))
+document.getElementById("senhaMsg").innerText="Senha alterada"
+}
+
+function save(){
+localStorage.setItem("estoque",JSON.stringify(estoque))
+localStorage.setItem("vendas",JSON.stringify(vendas))
+render()
+}
+
+function imeiExiste(imei){
+return estoque.some(p => p.imei === imei)
+}
+
+function importarLote(){
+let modelo=document.getElementById("modeloLote").value
+let cap=document.getElementById("capLote").value
+let lista=document.getElementById("listaImei").value.split("\n")
+let duplicados=[]
+lista.forEach(i=>{
+let imei=i.trim()
+if(!imei) return
+if(imeiExiste(imei)){
+duplicados.push(imei)
+}else{
+estoque.push({modelo:modelo,cap:cap,imei:imei,status:"Estoque"})
+}
+})
+if(duplicados.length){
+document.getElementById("imeiAlert").innerText="IMEIs duplicados bloqueados: "+duplicados.join(", ")
+}else{
+document.getElementById("imeiAlert").innerText=""
+}
+save()
+}
+
+function registrarVenda(){
+
+let imei=document.getElementById("imeiVenda").value
+let cliente=document.getElementById("clienteVenda").value
+let valor=parseFloat(document.getElementById("valorVenda").value)
+
+let aparelho = estoque.find(p=>p.imei===imei)
+
+if(!aparelho){
+alert("IMEI não encontrado no estoque")
+return
+}
+
+aparelho.status="Vendido"
+
+vendas.push({
+imei:imei,
+cliente:cliente,
+valor:valor,
+data:new Date().toLocaleDateString()
+})
+
+save()
+
+}
+
+function cancelarVenda(i){
+
+let venda=vendas[i]
+
+let aparelho = estoque.find(p=>p.imei===venda.imei)
+
+if(aparelho){
+aparelho.status="Estoque"
+}
+
+vendas.splice(i,1)
+
+save()
+
+}
+
+function render(){
+
+let tb=document.getElementById("estoqueBody")
+
+if(tb){
+
+tb.innerHTML=""
+
+estoque.forEach((p,i)=>{
+
+tb.innerHTML+=`
+<tr>
+<td>${p.modelo}</td>
+<td>${p.cap}</td>
+<td>${p.imei}</td>
+<td>${p.status}</td>
+<td>
+<button class="small" onclick="remover(${i})">Excluir</button>
+</td>
+</tr>`
+
+})
+
+}
+
+let estoqueQtd=estoque.filter(x=>x.status==="Estoque").length
+let vendidos=estoque.filter(x=>x.status==="Vendido").length
+
+let stats=document.getElementById("stats")
+
+if(stats){
+stats.innerHTML="<b>Em estoque:</b> "+estoqueQtd+" | <b>Vendidos:</b> "+vendidos
+}
+
+let total=0
+
+let fb=document.getElementById("financeBody")
+
+if(fb){
+
+fb.innerHTML=""
+
+vendas.forEach((v,i)=>{
+
+total+=Number(v.valor)
+
+fb.innerHTML+=`
+<tr>
+<td>${v.data}</td>
+<td>${v.cliente}</td>
+<td>${v.imei}</td>
+<td>R$ ${v.valor}</td>
+<td><button class="small" onclick="cancelarVenda(${i})">Cancelar</button></td>
+</tr>`
+
+})
+
+}
+
+let caixa=document.getElementById("totalCaixa")
+
+if(caixa){
+caixa.innerHTML="<b>Caixa total:</b> R$ "+total
+}
+
+}
+
+function remover(i){
+
+if(confirm("Excluir este aparelho do estoque?")){
+estoque.splice(i,1)
+save()
+}
+
+}
+
+function show(id){
+document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
+document.getElementById(id).classList.add("active")
+}
+
+</script>
+
+</body>
+</html>
