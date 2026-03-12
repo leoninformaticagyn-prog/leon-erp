@@ -82,6 +82,8 @@ th,td{border:1px solid #ddd;padding:8px}
 
 <button onclick="salvarCliente()">Salvar</button>
 
+<h4>Lojas cadastradas</h4>
+
 <div id="listaClientes"></div>
 
 </section>
@@ -304,6 +306,16 @@ carregarClientes()
 
 }
 
+function excluirCliente(id){
+
+if(!confirm("Excluir esta loja?")) return
+
+db.transaction("clientes","readwrite").objectStore("clientes").delete(id)
+
+carregarClientes()
+
+}
+
 function carregarClientes(){
 
 let lista=document.getElementById("listaClientes")
@@ -318,7 +330,13 @@ let c=e.target.result
 
 if(c){
 
-lista.innerHTML+=c.value.nome+"<br>"
+lista.innerHTML+=`
+<div>
+${c.value.nome}
+<button onclick="excluirCliente(${c.key})">Excluir</button>
+</div>
+`
+
 select.innerHTML+=`<option>${c.value.nome}</option>`
 
 c.continue()
