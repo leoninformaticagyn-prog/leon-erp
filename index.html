@@ -132,9 +132,9 @@ border-radius:6px;
 
 <section id="clientes">
 
-<h3>Clientes</h3>
+<h3>Clientes (Lojas)</h3>
 
-<input id="clienteNome" placeholder="Nome">
+<input id="clienteNome" placeholder="Nome da loja">
 
 <button onclick="salvarCliente()">Salvar</button>
 
@@ -196,6 +196,8 @@ border-radius:6px;
 
 <select id="clienteVenda"></select>
 
+<input id="compradorVenda" placeholder="Nome do comprador">
+
 <input id="imeiVenda" placeholder="Buscar IMEI" onkeyup="buscarImei()">
 
 <div id="resultadoBusca"></div>
@@ -210,7 +212,8 @@ border-radius:6px;
 
 <thead>
 <tr>
-<th>Cliente</th>
+<th>Loja</th>
+<th>Comprador</th>
 <th>IMEI</th>
 <th>Valor</th>
 <th>Data</th>
@@ -335,7 +338,6 @@ lista.innerHTML+=`<div>${m.modelo} ${m.cap} ${m.cor}</div>`
 function startScanner(){
 
 let dados=document.getElementById("modeloScanner").value
-
 let partes=dados.split("|")
 
 let modelo=partes[0]
@@ -356,19 +358,12 @@ if(decodedText.length!==15) return
 if(estoque.find(p=>p.imei===decodedText)){
 
 alert("IMEI já cadastrado")
-
 scanner.stop()
-
 return
 
 }
 
-estoque.push({
-modelo,
-cap,
-cor,
-imei:decodedText
-})
+estoque.push({modelo,cap,cor,imei:decodedText})
 
 salvarDados()
 
@@ -426,8 +421,6 @@ let resultado=document.getElementById("resultadoBusca")
 
 resultado.innerHTML=""
 
-if(busca.length<3) return
-
 estoque.forEach(p=>{
 
 if(p.imei.includes(busca)){
@@ -455,6 +448,7 @@ function registrarVenda(){
 
 let imei=document.getElementById("imeiVenda").value
 let cliente=document.getElementById("clienteVenda").value
+let comprador=document.getElementById("compradorVenda").value
 let valor=document.getElementById("valorVenda").value
 
 let aparelho = estoque.find(p=>p.imei===imei)
@@ -465,11 +459,11 @@ return
 }
 
 valor=parseFloat(valor.replace(".","").replace(",","."))
-
 valor=valor.toLocaleString("pt-BR",{minimumFractionDigits:2})
 
 vendas.push({
 cliente,
+comprador,
 imei,
 modelo:aparelho.modelo,
 valor,
@@ -499,6 +493,7 @@ vendas.forEach((v,index)=>{
 tabela.innerHTML+=`
 <tr>
 <td>${v.cliente}</td>
+<td>${v.comprador}</td>
 <td>${v.imei}</td>
 <td>${v.valor}</td>
 <td>${new Date(v.data).toLocaleDateString()}</td>
@@ -531,52 +526,28 @@ carregarDashboard()
 
 function carregarDashboard(){
 
-let painel=document.getElementById("painelModelos")
-
-let contagem={}
-
-estoque.forEach(p=>{
-
-if(!contagem[p.modelo]){
-contagem[p.modelo]=0
-}
-
-contagem[p.modelo]++
-
-})
-
-let html=""
-
-for(let modelo in contagem){
-
-html+=modelo+" — "+contagem[modelo]+" aparelhos<br>"
-
-}
-
-painel.innerHTML=html
-
 let hoje = new Date().toLocaleDateString()
 
-let total = 0
-let qtd = 0
+let total=0
+let qtd=0
 
 vendas.forEach(v=>{
 
-let data = new Date(v.data).toLocaleDateString()
+let data=new Date(v.data).toLocaleDateString()
 
 if(data===hoje){
 
-let valor = parseFloat(v.valor.replace(".","").replace(",","."))
+let valor=parseFloat(v.valor.replace(".","").replace(",","."))
 
-total += valor
+total+=valor
 qtd++
 
 }
 
 })
 
-document.getElementById("valorHoje").innerHTML = "Total vendido hoje: R$ "+total.toLocaleString("pt-BR",{minimumFractionDigits:2})
-document.getElementById("qtdHoje").innerHTML = "Vendas hoje: "+qtd
+document.getElementById("valorHoje").innerHTML="Total vendido hoje: R$ "+total.toLocaleString("pt-BR",{minimumFractionDigits:2})
+document.getElementById("qtdHoje").innerHTML="Vendas hoje: "+qtd
 
 }
 
