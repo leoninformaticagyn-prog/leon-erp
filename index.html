@@ -1,58 +1,64 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Leon Vendas v6.3</title>
+<title>Leon Vendas</title>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
 <style>
-body{font-family:Arial;margin:0;background:#eef2f7}
-header{background:#111;color:#fff;padding:14px;text-align:center}
-nav{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;background:#222;padding:10px}
-nav button{padding:10px;border:none;border-radius:6px;background:#fff;cursor:pointer}
-section{display:none;padding:16px}
+body{font-family:Arial;margin:0;background:#f4f6fa}
+header{background:#000;color:white;padding:16px;text-align:center}
+nav{background:#1f1f1f;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:10px}
+nav button{padding:10px;border:none;border-radius:6px;background:white;cursor:pointer}
+section{display:none;padding:18px}
 section.active{display:block}
-table{width:100%;border-collapse:collapse;background:#fff;margin-top:10px}
-th,td{border:1px solid #ddd;padding:8px;text-align:left}
-button.small{padding:4px 6px;font-size:12px}
-.login{max-width:350px;margin:120px auto;background:#fff;padding:20px;border-radius:10px}
+table{width:100%;border-collapse:collapse;background:white}
+th,td{border:1px solid #ddd;padding:8px}
 input,textarea{padding:8px;margin:4px 0;width:100%;max-width:420px}
-.alert{color:red;font-weight:bold}
+button.small{font-size:12px;padding:4px 6px}
+.card{background:white;padding:12px;border-radius:8px;margin:10px 0}
+.login{max-width:360px;margin:120px auto;background:white;padding:20px;border-radius:10px}
+#reader{width:300px}
 </style>
 </head>
+
 <body>
 
 <div id="loginScreen" class="login">
-<h3>Vendas Leon</h3>
+<h3>Leon Vendas</h3>
 <input id="user" placeholder="Usuário">
 <input id="pass" type="password" placeholder="Senha">
 <button onclick="login()">Entrar</button>
-<p id="loginMsg" class="alert"></p>
+<p id="loginMsg" style="color:red"></p>
 </div>
 
 <div id="app" style="display:none">
 
 <header>
-<h2>Leon Estoque</h2>
+<h1>Leon Vendas</h1>
+<p>Sistema de Controle de iPhones</p>
 </header>
 
 <nav>
 <button onclick="show('dashboard')">Dashboard</button>
 <button onclick="show('estoque')">Estoque</button>
-<button onclick="show('lote')">Entrada Lote</button>
-<button onclick="show('venda')">Registrar Venda</button>
+<button onclick="show('entrada')">Entrada Lote</button>
+<button onclick="show('scanner')">Scanner IMEI</button>
+<button onclick="show('venda')">Venda</button>
 <button onclick="show('financeiro')">Financeiro</button>
-<button onclick="show('senha')">Alterar Senha</button>
-<button onclick="logout()">Logout</button>
+<button onclick="logout()">Sair</button>
 </nav>
 
 <section id="dashboard" class="active">
-<h3>Dashboard</h3>
-<div id="stats"></div>
+<h3>Resumo</h3>
+<div class="card" id="stats"></div>
 </section>
 
 <section id="estoque">
 <h3>Estoque</h3>
+<input id="buscaImei" placeholder="Buscar IMEI" onkeyup="buscar()">
 <table>
 <thead>
 <tr>
@@ -67,26 +73,32 @@ input,textarea{padding:8px;margin:4px 0;width:100%;max-width:420px}
 </table>
 </section>
 
-<section id="lote">
-<h3>Entrada de lote</h3>
-<input id="modeloLote" placeholder="Modelo">
-<input id="capLote" placeholder="Capacidade">
+<section id="entrada">
+<h3>Entrada de Lote</h3>
+<input id="modelo" placeholder="Modelo">
+<input id="capacidade" placeholder="Capacidade">
 <textarea id="listaImei" rows="6" placeholder="IMEIs (1 por linha)"></textarea>
-<button onclick="importarLote()">Importar</button>
-<p id="imeiAlert" class="alert"></p>
+<button onclick="importar()">Importar IMEIs</button>
+<p id="alerta" style="color:red"></p>
+</section>
+
+<section id="scanner">
+<h3>Scanner de IMEI</h3>
+<div id="reader"></div>
+<button onclick="startScanner()">Iniciar câmera</button>
 </section>
 
 <section id="venda">
-<h3>Registrar venda</h3>
+<h3>Registrar Venda</h3>
 <input id="imeiVenda" placeholder="IMEI">
 <input id="clienteVenda" placeholder="Cliente">
-<input id="valorVenda" placeholder="Valor (R$)">
-<button onclick="registrarVenda()">Registrar venda</button>
+<input id="valorVenda" placeholder="Valor">
+<button onclick="vender()">Registrar</button>
 </section>
 
 <section id="financeiro">
 <h3>Financeiro</h3>
-<div id="totalCaixa"></div>
+<div id="caixaTotal"></div>
 <table>
 <thead>
 <tr>
@@ -101,47 +113,22 @@ input,textarea{padding:8px;margin:4px 0;width:100%;max-width:420px}
 </table>
 </section>
 
-<section id="senha">
-<h3>Alterar senha</h3>
-<input id="novaSenha" type="password" placeholder="Nova senha">
-<button onclick="alterarSenha()">Salvar nova senha</button>
-<p id="senhaMsg"></p>
-</section>
-
 </div>
 
 <script>
 
-let loginData = JSON.parse(localStorage.getItem("loginData") || '{"user":"Leon","pass":"Leon@017"}')
-let estoque = JSON.parse(localStorage.getItem("estoque") || "[]")
-let vendas = JSON.parse(localStorage.getItem("vendas") || "[]")
+let estoque = JSON.parse(localStorage.getItem("estoque")||"[]")
+let vendas = JSON.parse(localStorage.getItem("vendas")||"[]")
 
 function login(){
-let u=document.getElementById("user").value
-let p=document.getElementById("pass").value
-if(u===loginData.user && p===loginData.pass){
 document.getElementById("loginScreen").style.display="none"
 document.getElementById("app").style.display="block"
 render()
-}else{
-document.getElementById("loginMsg").innerText="Usuário ou senha incorreto"
-}
 }
 
 function logout(){
 document.getElementById("app").style.display="none"
 document.getElementById("loginScreen").style.display="block"
-}
-
-function alterarSenha(){
-let nova=document.getElementById("novaSenha").value
-if(!nova){
-document.getElementById("senhaMsg").innerText="Digite uma senha válida"
-return
-}
-loginData.pass = nova
-localStorage.setItem("loginData",JSON.stringify(loginData))
-document.getElementById("senhaMsg").innerText="Senha alterada"
 }
 
 function save(){
@@ -151,41 +138,61 @@ render()
 }
 
 function imeiExiste(imei){
-return estoque.some(p => p.imei === imei)
+return estoque.some(p => p.imei===imei)
 }
 
-function importarLote(){
-let modelo=document.getElementById("modeloLote").value
-let cap=document.getElementById("capLote").value
-let lista=document.getElementById("listaImei").value.split("\n")
-let duplicados=[]
+function importar(){
+
+let modelo=document.getElementById("modelo").value
+let cap=document.getElementById("capacidade").value
+let lista=document.getElementById("listaImei").value.split("\\n")
+
 lista.forEach(i=>{
 let imei=i.trim()
 if(!imei) return
-if(imeiExiste(imei)){
-duplicados.push(imei)
-}else{
+
+if(!imeiExiste(imei)){
 estoque.push({modelo:modelo,cap:cap,imei:imei,status:"Estoque"})
-}
-})
-if(duplicados.length){
-document.getElementById("imeiAlert").innerText="IMEIs duplicados bloqueados: "+duplicados.join(", ")
 }else{
-document.getElementById("imeiAlert").innerText=""
+alert("IMEI duplicado: "+imei)
 }
+
+})
+
 save()
 }
 
-function registrarVenda(){
+function startScanner(){
+
+const scanner = new Html5Qrcode("reader")
+
+scanner.start(
+{ facingMode: "environment" },
+{ fps: 10, qrbox: 250 },
+(decodedText) => {
+
+if(!imeiExiste(decodedText)){
+estoque.push({modelo:"Scanner",cap:"",imei:decodedText,status:"Estoque"})
+save()
+}else{
+alert("IMEI já cadastrado")
+}
+
+}
+)
+
+}
+
+function vender(){
 
 let imei=document.getElementById("imeiVenda").value
 let cliente=document.getElementById("clienteVenda").value
-let valor=parseFloat(document.getElementById("valorVenda").value)
+let valor=document.getElementById("valorVenda").value
 
 let aparelho = estoque.find(p=>p.imei===imei)
 
 if(!aparelho){
-alert("IMEI não encontrado no estoque")
+alert("IMEI não encontrado")
 return
 }
 
@@ -218,6 +225,24 @@ save()
 
 }
 
+function buscar(){
+
+let busca=document.getElementById("buscaImei").value
+
+let linhas=document.querySelectorAll("#estoqueBody tr")
+
+linhas.forEach(l=>{
+
+if(l.innerText.includes(busca)){
+l.style.display=""
+}else{
+l.style.display="none"
+}
+
+})
+
+}
+
 function render(){
 
 let tb=document.getElementById("estoqueBody")
@@ -235,21 +260,12 @@ tb.innerHTML+=`
 <td>${p.imei}</td>
 <td>${p.status}</td>
 <td>
-<button class="small" onclick="remover(${i})">Excluir</button>
+<button onclick="excluir(${i})">Excluir</button>
 </td>
 </tr>`
 
 })
 
-}
-
-let estoqueQtd=estoque.filter(x=>x.status==="Estoque").length
-let vendidos=estoque.filter(x=>x.status==="Vendido").length
-
-let stats=document.getElementById("stats")
-
-if(stats){
-stats.innerHTML="<b>Em estoque:</b> "+estoqueQtd+" | <b>Vendidos:</b> "+vendidos
 }
 
 let total=0
@@ -270,24 +286,27 @@ fb.innerHTML+=`
 <td>${v.cliente}</td>
 <td>${v.imei}</td>
 <td>R$ ${v.valor}</td>
-<td><button class="small" onclick="cancelarVenda(${i})">Cancelar</button></td>
+<td>
+<button onclick="cancelarVenda(${i})">Cancelar</button>
+</td>
 </tr>`
 
 })
 
 }
 
-let caixa=document.getElementById("totalCaixa")
+document.getElementById("caixaTotal").innerHTML="Caixa total: R$ "+total
 
-if(caixa){
-caixa.innerHTML="<b>Caixa total:</b> R$ "+total
+let estoqueQtd=estoque.filter(x=>x.status==="Estoque").length
+let vendidos=estoque.filter(x=>x.status==="Vendido").length
+
+document.getElementById("stats").innerHTML="Em estoque: "+estoqueQtd+" | Vendidos: "+vendidos
+
 }
 
-}
+function excluir(i){
 
-function remover(i){
-
-if(confirm("Excluir este aparelho do estoque?")){
+if(confirm("Excluir aparelho?")){
 estoque.splice(i,1)
 save()
 }
@@ -295,9 +314,14 @@ save()
 }
 
 function show(id){
+
 document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
+
 document.getElementById(id).classList.add("active")
+
 }
+
+render()
 
 </script>
 
