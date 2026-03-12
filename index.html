@@ -62,7 +62,7 @@ border:1px solid #ddd;
 padding:8px
 }
 
-input,textarea{
+select,input,textarea{
 padding:8px;
 margin:4px 0;
 width:100%;
@@ -128,8 +128,6 @@ cursor:pointer
 
 <button onclick="show('estoque')">Estoque</button>
 
-<button onclick="show('entrada')">Entrada Lote</button>
-
 <button onclick="show('scanner')">Scanner IMEI</button>
 
 <button onclick="show('venda')">Venda</button>
@@ -164,7 +162,6 @@ cursor:pointer
 <th>Cor</th>
 <th>IMEI</th>
 <th>Status</th>
-<th>Ações</th>
 </tr>
 
 </thead>
@@ -175,31 +172,19 @@ cursor:pointer
 
 </section>
 
-<section id="entrada">
-
-<h3>Entrada de Lote</h3>
-
-<input id="modelo" placeholder="Modelo">
-
-<input id="capacidade" placeholder="Capacidade">
-
-<input id="cor" placeholder="Cor">
-
-<textarea id="listaImei" rows="6" placeholder="IMEIs (1 por linha)"></textarea>
-
-<button onclick="importar()">Importar IMEIs</button>
-
-</section>
-
 <section id="scanner">
 
 <h3>Scanner de IMEI</h3>
 
-<input id="modeloScanner" placeholder="Modelo">
+<select id="modeloSelect">
 
-<input id="capScanner" placeholder="Capacidade">
+<option value="">Selecionar aparelho</option>
 
-<input id="corScanner" placeholder="Cor">
+<option value="iPhone 15|128GB|Preto">iPhone 15 128GB Preto</option>
+<option value="iPhone 15|256GB|Azul">iPhone 15 256GB Azul</option>
+<option value="iPhone 14|128GB|Branco">iPhone 14 128GB Branco</option>
+
+</select>
 
 <div id="reader"></div>
 
@@ -238,7 +223,6 @@ cursor:pointer
 <th>Cliente</th>
 <th>IMEI</th>
 <th>Valor</th>
-<th>Ação</th>
 </tr>
 
 </thead>
@@ -300,39 +284,23 @@ return estoque.some(p => p.imei===imei)
 
 }
 
-function importar(){
-
-let modelo=document.getElementById("modelo").value
-let cap=document.getElementById("capacidade").value
-let cor=document.getElementById("cor").value
-
-let lista=document.getElementById("listaImei").value.split("\\n")
-
-lista.forEach(i=>{
-
-let imei=i.trim()
-
-if(!imei) return
-
-if(!imeiExiste(imei)){
-
-estoque.push({
-modelo:modelo,
-cap:cap,
-cor:cor,
-imei:imei,
-status:"Estoque"
-})
-
-}
-
-})
-
-save()
-
-}
-
 function startScanner(){
+
+let dados=document.getElementById("modeloSelect").value
+
+if(!dados){
+
+alert("selecionar aparelho")
+
+return
+
+}
+
+let partes=dados.split("|")
+
+let modelo=partes[0]
+let cap=partes[1]
+let cor=partes[2]
 
 scanner = new Html5Qrcode("reader")
 
@@ -358,10 +326,6 @@ alert("IMEI já cadastrado")
 return
 
 }
-
-let modelo=document.getElementById("modeloScanner").value
-let cap=document.getElementById("capScanner").value
-let cor=document.getElementById("corScanner").value
 
 estoque.push({
 modelo:modelo,
@@ -455,24 +419,6 @@ alert("venda concluida com sucesso")
 
 }
 
-function cancelarVenda(i){
-
-let venda=vendas[i]
-
-let aparelho = estoque.find(p=>p.imei===venda.imei)
-
-if(aparelho){
-
-aparelho.status="Estoque"
-
-}
-
-vendas.splice(i,1)
-
-save()
-
-}
-
 function buscar(){
 
 let busca=document.getElementById("buscaImei").value
@@ -495,11 +441,9 @@ function render(){
 
 let tb=document.getElementById("estoqueBody")
 
-if(tb){
-
 tb.innerHTML=""
 
-estoque.forEach((p,i)=>{
+estoque.forEach((p)=>{
 
 tb.innerHTML+=`
 
@@ -511,29 +455,19 @@ tb.innerHTML+=`
 <td>${p.imei}</td>
 <td>${p.status}</td>
 
-<td>
-
-<button onclick="excluir(${i})">Excluir</button>
-
-</td>
-
 </tr>
 
 `
 
 })
 
-}
-
 let total=0
 
 let fb=document.getElementById("financeBody")
 
-if(fb){
-
 fb.innerHTML=""
 
-vendas.forEach((v,i)=>{
+vendas.forEach((v)=>{
 
 let numero = parseFloat(v.valor.replace(/\./g,"").replace(",","."))
 total+=numero
@@ -547,38 +481,15 @@ fb.innerHTML+=`
 <td>${v.imei}</td>
 <td>R$ ${v.valor}</td>
 
-<td>
-
-<button onclick="cancelarVenda(${i})">Cancelar</button>
-
-</td>
-
 </tr>
 
 `
 
 })
 
-}
-
 document.getElementById("caixaTotal").innerHTML="Caixa total: R$ "+total.toLocaleString("pt-BR",{minimumFractionDigits:2})
 
-let estoqueQtd=estoque.filter(x=>x.status==="Estoque").length
-let vendidos=estoque.filter(x=>x.status==="Vendido").length
-
-document.getElementById("stats").innerHTML="Em estoque: "+estoqueQtd+" | Vendidos: "+vendidos
-
-}
-
-function excluir(i){
-
-if(confirm("Excluir aparelho?")){
-
-estoque.splice(i,1)
-
-save()
-
-}
+document.getElementById("stats").innerHTML="Em estoque: "+estoque.filter(x=>x.status==="Estoque").length+" | Vendidos: "+estoque.filter(x=>x.status==="Vendido").length
 
 }
 
