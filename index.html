@@ -149,16 +149,13 @@ margin-top:40px;
 <table>
 
 <thead>
-
 <tr>
 <th>Modelo</th>
 <th>Cap</th>
 <th>Cor</th>
 <th>IMEI</th>
-<th>Status</th>
 <th>Ação</th>
 </tr>
-
 </thead>
 
 <tbody id="tabelaEstoque"></tbody>
@@ -183,6 +180,8 @@ margin-top:40px;
 
 <h3>Registrar Venda</h3>
 
+<select id="clienteVenda"></select>
+
 <input id="imeiVenda" placeholder="Buscar IMEI" onkeyup="buscarImei()">
 
 <div id="resultadoBusca"></div>
@@ -190,6 +189,24 @@ margin-top:40px;
 <input id="valorVenda" placeholder="Valor">
 
 <button onclick="registrarVenda()">Registrar</button>
+
+<h3>Histórico de vendas</h3>
+
+<table>
+
+<thead>
+<tr>
+<th>Cliente</th>
+<th>IMEI</th>
+<th>Valor</th>
+<th>Data</th>
+<th>Ação</th>
+</tr>
+</thead>
+
+<tbody id="tabelaVendas"></tbody>
+
+</table>
 
 </section>
 
@@ -234,7 +251,6 @@ alert("login incorreto")
 function show(id){
 
 document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
-
 document.getElementById(id).classList.add("active")
 
 }
@@ -254,12 +270,15 @@ carregarClientes()
 function carregarClientes(){
 
 let lista=document.getElementById("listaClientes")
+let select=document.getElementById("clienteVenda")
 
 lista.innerHTML=""
+select.innerHTML=""
 
 clientes.forEach(c=>{
 
 lista.innerHTML+=`<div>${c.nome}</div>`
+select.innerHTML+=`<option value="${c.nome}">${c.nome}</option>`
 
 })
 
@@ -331,28 +350,22 @@ return
 }
 
 estoque.push({
-
 modelo,
 cap,
 cor,
-imei:decodedText,
-status:"Estoque"
-
+imei:decodedText
 })
 
 salvarDados()
 
 carregarEstoque()
-
 carregarDashboard()
 
 alert("IMEI cadastrado")
 
 scanner.stop()
 
-}
-
-)
+})
 
 }
 
@@ -370,7 +383,6 @@ tabela.innerHTML+=`
 <td>${p.cap}</td>
 <td>${p.cor}</td>
 <td>${p.imei}</td>
-<td>${p.status}</td>
 <td><button onclick="excluirEstoque(${index})">Excluir</button></td>
 </tr>
 `
@@ -381,14 +393,13 @@ tabela.innerHTML+=`
 
 function excluirEstoque(index){
 
-if(!confirm("Excluir este aparelho do estoque?")) return
+if(!confirm("Excluir aparelho?")) return
 
 estoque.splice(index,1)
 
 salvarDados()
 
 carregarEstoque()
-
 carregarDashboard()
 
 }
@@ -405,7 +416,7 @@ if(busca.length<3) return
 
 estoque.forEach(p=>{
 
-if(p.imei.includes(busca) && p.status==="Estoque"){
+if(p.imei.includes(busca)){
 
 resultado.innerHTML+=`
 <div onclick="selecionarImei('${p.imei}')">
@@ -422,7 +433,6 @@ ${p.modelo} ${p.cap} ${p.cor} - ${p.imei}
 function selecionarImei(imei){
 
 document.getElementById("imeiVenda").value=imei
-
 document.getElementById("resultadoBusca").innerHTML=""
 
 }
@@ -430,23 +440,82 @@ document.getElementById("resultadoBusca").innerHTML=""
 function registrarVenda(){
 
 let imei=document.getElementById("imeiVenda").value
+let cliente=document.getElementById("clienteVenda").value
 let valor=document.getElementById("valorVenda").value
+
+let aparelho = estoque.find(p=>p.imei===imei)
+
+if(!aparelho){
+alert("IMEI não encontrado")
+return
+}
 
 valor=parseFloat(valor.replace(".","").replace(",","."))
 
 valor=valor.toLocaleString("pt-BR",{minimumFractionDigits:2})
 
 vendas.push({
-
+cliente,
 imei,
+modelo:aparelho.modelo,
+cap:aparelho.cap,
+cor:aparelho.cor,
 valor,
 data:new Date()
-
 })
+
+estoque = estoque.filter(p=>p.imei!==imei)
 
 salvarDados()
 
+carregarEstoque()
+carregarVendas()
+carregarDashboard()
+
 alert("venda concluida com sucesso")
+
+}
+
+function carregarVendas(){
+
+let tabela=document.getElementById("tabelaVendas")
+
+tabela.innerHTML=""
+
+vendas.forEach((v,index)=>{
+
+tabela.innerHTML+=`
+<tr>
+<td>${v.cliente}</td>
+<td>${v.imei}</td>
+<td>${v.valor}</td>
+<td>${new Date(v.data).toLocaleDateString()}</td>
+<td><button onclick="cancelarVenda(${index})">Cancelar</button></td>
+</tr>
+`
+
+})
+
+}
+
+function cancelarVenda(index){
+
+let venda=vendas[index]
+
+estoque.push({
+modelo:venda.modelo,
+cap:venda.cap,
+cor:venda.cor,
+imei:venda.imei
+})
+
+vendas.splice(index,1)
+
+salvarDados()
+
+carregarEstoque()
+carregarVendas()
+carregarDashboard()
 
 }
 
@@ -459,9 +528,7 @@ let contagem={}
 estoque.forEach(p=>{
 
 if(!contagem[p.modelo]){
-
 contagem[p.modelo]=0
-
 }
 
 contagem[p.modelo]++
@@ -483,6 +550,7 @@ painel.innerHTML=html
 carregarClientes()
 carregarModelos()
 carregarEstoque()
+carregarVendas()
 carregarDashboard()
 
 </script>
