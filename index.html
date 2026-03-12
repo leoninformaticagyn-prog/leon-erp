@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
 
 <meta charset="UTF-8">
@@ -60,7 +59,7 @@ border:1px solid #ddd;
 padding:8px
 }
 
-input,select{
+input,select,textarea{
 padding:8px;
 margin:5px;
 }
@@ -110,6 +109,7 @@ border-radius:6px;
 <button onclick="show('estoque')">Estoque</button>
 <button onclick="show('scanner')">Scanner</button>
 <button onclick="show('vendas')">Vendas</button>
+<button onclick="show('cancelamentos')">Cancelamentos</button>
 
 </nav>
 
@@ -196,7 +196,7 @@ border-radius:6px;
 
 <select id="clienteVenda"></select>
 
-<input id="compradorVenda" placeholder="Nome do comprador">
+<input id="compradorVenda" placeholder="Comprador">
 
 <input id="imeiVenda" placeholder="Buscar IMEI" onkeyup="buscarImei()">
 
@@ -227,6 +227,30 @@ border-radius:6px;
 
 </section>
 
+<section id="cancelamentos">
+
+<h3>Histórico de Cancelamentos</h3>
+
+<table>
+
+<thead>
+<tr>
+<th>Loja</th>
+<th>Comprador</th>
+<th>IMEI</th>
+<th>Valor</th>
+<th>Venda</th>
+<th>Cancelamento</th>
+<th>Motivo</th>
+</tr>
+</thead>
+
+<tbody id="tabelaCancelamentos"></tbody>
+
+</table>
+
+</section>
+
 </div>
 
 <script>
@@ -235,8 +259,7 @@ let estoque = JSON.parse(localStorage.getItem("estoque")||"[]")
 let modelos = JSON.parse(localStorage.getItem("modelos")||"[]")
 let clientes = JSON.parse(localStorage.getItem("clientes")||"[]")
 let vendas = JSON.parse(localStorage.getItem("vendas")||"[]")
-
-let scanner
+let cancelamentos = JSON.parse(localStorage.getItem("cancelamentos")||"[]")
 
 function salvarDados(){
 
@@ -244,6 +267,7 @@ localStorage.setItem("estoque",JSON.stringify(estoque))
 localStorage.setItem("modelos",JSON.stringify(modelos))
 localStorage.setItem("clientes",JSON.stringify(clientes))
 localStorage.setItem("vendas",JSON.stringify(vendas))
+localStorage.setItem("cancelamentos",JSON.stringify(cancelamentos))
 
 }
 
@@ -301,149 +325,6 @@ select.innerHTML+=`<option value="${c.nome}">${c.nome}</option>`
 
 }
 
-function criarModelo(){
-
-let modelo=document.getElementById("modelo").value
-let cap=document.getElementById("capacidade").value
-let cor=document.getElementById("cor").value
-
-modelos.push({modelo,cap,cor})
-
-salvarDados()
-
-carregarModelos()
-
-}
-
-function carregarModelos(){
-
-let select=document.getElementById("modeloScanner")
-let lista=document.getElementById("listaModelos")
-
-select.innerHTML=""
-lista.innerHTML=""
-
-modelos.forEach(m=>{
-
-select.innerHTML+=`<option value="${m.modelo}|${m.cap}|${m.cor}">
-${m.modelo} ${m.cap} ${m.cor}
-</option>`
-
-lista.innerHTML+=`<div>${m.modelo} ${m.cap} ${m.cor}</div>`
-
-})
-
-}
-
-function startScanner(){
-
-let dados=document.getElementById("modeloScanner").value
-let partes=dados.split("|")
-
-let modelo=partes[0]
-let cap=partes[1]
-let cor=partes[2]
-
-scanner = new Html5Qrcode("reader")
-
-scanner.start(
-{ facingMode:"environment" },
-{ fps:10, qrbox:250 },
-
-(decodedText)=>{
-
-if(!decodedText.startsWith("35")) return
-if(decodedText.length!==15) return
-
-if(estoque.find(p=>p.imei===decodedText)){
-
-alert("IMEI já cadastrado")
-scanner.stop()
-return
-
-}
-
-estoque.push({modelo,cap,cor,imei:decodedText})
-
-salvarDados()
-
-carregarEstoque()
-carregarDashboard()
-
-alert("IMEI cadastrado")
-
-scanner.stop()
-
-})
-
-}
-
-function carregarEstoque(){
-
-let tabela=document.getElementById("tabelaEstoque")
-
-tabela.innerHTML=""
-
-estoque.forEach((p,index)=>{
-
-tabela.innerHTML+=`
-<tr>
-<td>${p.modelo}</td>
-<td>${p.cap}</td>
-<td>${p.cor}</td>
-<td>${p.imei}</td>
-<td><button onclick="excluirEstoque(${index})">Excluir</button></td>
-</tr>
-`
-
-})
-
-}
-
-function excluirEstoque(index){
-
-if(!confirm("Excluir aparelho?")) return
-
-estoque.splice(index,1)
-
-salvarDados()
-
-carregarEstoque()
-carregarDashboard()
-
-}
-
-function buscarImei(){
-
-let busca=document.getElementById("imeiVenda").value
-
-let resultado=document.getElementById("resultadoBusca")
-
-resultado.innerHTML=""
-
-estoque.forEach(p=>{
-
-if(p.imei.includes(busca)){
-
-resultado.innerHTML+=`
-<div onclick="selecionarImei('${p.imei}')">
-${p.modelo} ${p.cap} ${p.cor} - ${p.imei}
-</div>
-`
-
-}
-
-})
-
-}
-
-function selecionarImei(imei){
-
-document.getElementById("imeiVenda").value=imei
-document.getElementById("resultadoBusca").innerHTML=""
-
-}
-
 function registrarVenda(){
 
 let imei=document.getElementById("imeiVenda").value
@@ -465,7 +346,6 @@ vendas.push({
 cliente,
 comprador,
 imei,
-modelo:aparelho.modelo,
 valor,
 data:new Date()
 })
@@ -477,8 +357,6 @@ salvarDados()
 carregarEstoque()
 carregarVendas()
 carregarDashboard()
-
-alert("venda concluida com sucesso")
 
 }
 
@@ -496,7 +374,7 @@ tabela.innerHTML+=`
 <td>${v.comprador}</td>
 <td>${v.imei}</td>
 <td>${v.valor}</td>
-<td>${new Date(v.data).toLocaleDateString()}</td>
+<td>${new Date(v.data).toLocaleString()}</td>
 <td><button onclick="cancelarVenda(${index})">Cancelar</button></td>
 </tr>
 `
@@ -507,12 +385,25 @@ tabela.innerHTML+=`
 
 function cancelarVenda(index){
 
+let confirmar = confirm("Registrar cancelamento desta venda?")
+
+if(!confirmar) return
+
+let motivo = prompt("Informe o motivo do cancelamento")
+
 let venda=vendas[index]
 
-estoque.push({
-modelo:venda.modelo,
-imei:venda.imei
+cancelamentos.push({
+cliente:venda.cliente,
+comprador:venda.comprador,
+imei:venda.imei,
+valor:venda.valor,
+dataVenda:venda.data,
+dataCancelamento:new Date(),
+motivo
 })
+
+estoque.push({imei:venda.imei})
 
 vendas.splice(index,1)
 
@@ -520,7 +411,32 @@ salvarDados()
 
 carregarEstoque()
 carregarVendas()
+carregarCancelamentos()
 carregarDashboard()
+
+}
+
+function carregarCancelamentos(){
+
+let tabela=document.getElementById("tabelaCancelamentos")
+
+tabela.innerHTML=""
+
+cancelamentos.forEach(c=>{
+
+tabela.innerHTML+=`
+<tr>
+<td>${c.cliente}</td>
+<td>${c.comprador}</td>
+<td>${c.imei}</td>
+<td>${c.valor}</td>
+<td>${new Date(c.dataVenda).toLocaleString()}</td>
+<td>${new Date(c.dataCancelamento).toLocaleString()}</td>
+<td>${c.motivo}</td>
+</tr>
+`
+
+})
 
 }
 
@@ -552,9 +468,8 @@ document.getElementById("qtdHoje").innerHTML="Vendas hoje: "+qtd
 }
 
 carregarClientes()
-carregarModelos()
-carregarEstoque()
 carregarVendas()
+carregarCancelamentos()
 carregarDashboard()
 
 </script>
