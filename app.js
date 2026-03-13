@@ -30,29 +30,6 @@ document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
 
 document.getElementById(id).classList.add("active")
 
-if(id==="estoque") iniciarScanner()
-
-}
-
-function iniciarScanner(){
-
-if(scanner) return
-
-scanner = new Html5Qrcode("reader")
-
-scanner.start(
-{ facingMode: "environment" },
-{ fps: 10, qrbox: 250 },
-(code)=>{
-
-document.getElementById("codigo").value = code
-
-scanner.stop()
-scanner=null
-
-}
-)
-
 }
 
 function addEstoque(){
@@ -245,5 +222,121 @@ milhas+=p.milhas
 document.getElementById("caixa").innerHTML="R$ "+caixa
 document.getElementById("lucro").innerHTML="R$ "+lucro
 document.getElementById("milhas").innerHTML=milhas+" pontos"
+
+}
+
+function backup(){
+
+let data={estoque,vendas}
+
+let blob=new Blob([JSON.stringify(data)],{type:"application/json"})
+
+let a=document.createElement("a")
+
+a.href=URL.createObjectURL(blob)
+
+a.download="backup_leon_vendas.json"
+
+a.click()
+
+}
+
+function importar(){
+
+let input=document.createElement("input")
+
+input.type="file"
+
+input.onchange=e=>{
+
+let file=e.target.files[0]
+
+let reader=new FileReader()
+
+reader.onload=function(){
+
+let data=JSON.parse(reader.result)
+
+estoque=data.estoque
+vendas=data.vendas
+
+renderEstoque()
+renderVendas()
+dashboard()
+
+}
+
+reader.readAsText(file)
+
+}
+
+input.click()
+
+}
+
+function exportarExcel(){
+
+let texto="Cliente,Código,Valor,Lucro,Status\n"
+
+vendas.forEach(v=>{
+
+texto+=`${v.cliente},${v.codigo},${v.valor},${v.lucro},${v.status}\n`
+
+})
+
+let blob=new Blob([texto])
+
+let a=document.createElement("a")
+
+a.href=URL.createObjectURL(blob)
+
+a.download="relatorio_vendas.csv"
+
+a.click()
+
+}
+
+/* ===== SCANNER IMEI ===== */
+
+function abrirScanner(){
+
+let reader=document.getElementById("reader")
+
+reader.style.display="block"
+
+if(scanner) return
+
+scanner = new Html5Qrcode("reader")
+
+scanner.start(
+{ facingMode: "environment" },
+{ fps: 10, qrbox: 250 },
+(code)=>{
+
+validarIMEI(code)
+
+}
+)
+
+}
+
+function validarIMEI(codigo){
+
+let imei=codigo.replace(/\D/g,"")
+
+if(imei.length===15 && imei.startsWith("35")){
+
+document.getElementById("codigo").value=imei
+
+scanner.stop()
+scanner=null
+
+document.getElementById("reader").style.display="none"
+
+}else{
+
+console.log("Código lido mas não é IMEI válido")
+
+}
 
 }
