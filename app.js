@@ -35,14 +35,32 @@ document.getElementById(id).classList.add("active")
 
 function addEstoque(){
 
+function addEstoque(){
+
+let imei=codigo.value
+
+if(estoque.find(p=>p.codigo===imei)){
+
+alert("IMEI já cadastrado")
+return
+
+}
+
 estoque.push({
 
 modelo:modelo.value,
 cap:cap.value,
 cor:cor.value,
-codigo:codigo.value,
+codigo:imei,
 custo:parseFloat(custo.value),
 milhas:parseFloat(milhasAdd.value)
+
+})
+
+renderEstoque()
+dashboard()
+
+}
 
 })
 
