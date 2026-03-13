@@ -1,7 +1,6 @@
 let estoque=[]
 let vendas=[]
-
-let scannerAtivo=false
+let scanner=null
 
 function login(){
 
@@ -22,9 +21,7 @@ alert("Login inválido")
 }
 
 function logout(){
-
 location.reload()
-
 }
 
 function show(id){
@@ -37,15 +34,34 @@ if(id==="estoque") iniciarScanner()
 
 }
 
+function iniciarScanner(){
+
+if(scanner) return
+
+scanner = new Html5Qrcode("reader")
+
+scanner.start(
+{ facingMode: "environment" },
+{ fps: 10, qrbox: 250 },
+(code)=>{
+
+document.getElementById("codigo").value = code
+
+scanner.stop()
+scanner=null
+
+}
+)
+
+}
+
 function addEstoque(){
 
 let imei=codigo.value
 
 if(estoque.find(p=>p.codigo===imei)){
-
 alert("IMEI já cadastrado")
 return
-
 }
 
 estoque.push({
@@ -126,14 +142,11 @@ let imei=codigoVenda.value
 let aparelho=estoque.find(p=>p.codigo===imei)
 
 if(!aparelho){
-
 alert("Aparelho não encontrado")
 return
-
 }
 
 let valor=parseFloat(valorVenda.value)
-
 let lucro=valor-aparelho.custo
 
 vendas.push({
@@ -226,116 +239,11 @@ lucro+=v.lucro
 })
 
 estoque.forEach(p=>{
-
 milhas+=p.milhas
-
 })
 
 document.getElementById("caixa").innerHTML="R$ "+caixa
 document.getElementById("lucro").innerHTML="R$ "+lucro
 document.getElementById("milhas").innerHTML=milhas+" pontos"
-
-}
-
-function backup(){
-
-let data={estoque,vendas}
-
-let blob=new Blob([JSON.stringify(data)],{type:"application/json"})
-
-let a=document.createElement("a")
-
-a.href=URL.createObjectURL(blob)
-
-a.download="backup_leon_vendas.json"
-
-a.click()
-
-}
-
-function importar(){
-
-let input=document.createElement("input")
-
-input.type="file"
-
-input.onchange=e=>{
-
-let file=e.target.files[0]
-
-let reader=new FileReader()
-
-reader.onload=function(){
-
-let data=JSON.parse(reader.result)
-
-estoque=data.estoque
-vendas=data.vendas
-
-renderEstoque()
-renderVendas()
-dashboard()
-
-}
-
-reader.readAsText(file)
-
-}
-
-input.click()
-
-}
-
-function exportarExcel(){
-
-let texto="Cliente,Código,Valor,Lucro,Status\n"
-
-vendas.forEach(v=>{
-
-texto+=`${v.cliente},${v.codigo},${v.valor},${v.lucro},${v.status}\n`
-
-})
-
-let blob=new Blob([texto])
-
-let a=document.createElement("a")
-
-a.href=URL.createObjectURL(blob)
-
-a.download="relatorio_vendas.csv"
-
-a.click()
-
-}
-
-function iniciarScanner(){
-
-if(scannerAtivo) return
-
-scannerAtivo=true
-
-const html5QrCode = new Html5QrCode("reader")
-
-html5QrCode.start(
-{ facingMode: "environment" },
-{ fps: 10, qrbox: 250 },
-
-(code)=>{
-
-document.getElementById("codigo").value = code
-
-html5QrCode.stop()
-
-scannerAtivo=false
-
-}
-
-).catch(err=>{
-
-console.log("scanner não iniciado")
-
-scannerAtivo=false
-
-})
 
 }
