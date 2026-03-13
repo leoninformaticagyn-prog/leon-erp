@@ -31,21 +31,11 @@ th,td{border:1px solid #ddd;padding:8px}
 
 #login{text-align:center;margin-top:120px}
 
-#sugestoes{
-background:white;
-border:1px solid #ccc;
-width:250px;
-position:absolute
-}
+#sugestoes{background:white;border:1px solid #ccc;width:250px;position:absolute}
 
-#sugestoes div{
-padding:5px;
-cursor:pointer
-}
+#sugestoes div{padding:5px;cursor:pointer}
 
-#sugestoes div:hover{
-background:#eee
-}
+#sugestoes div:hover{background:#eee}
 
 </style>
 
@@ -83,7 +73,6 @@ background:#eee
 <button onclick="show('cancelamentos')">Cancelamentos</button>
 <button onclick="backup()">Backup</button>
 <button onclick="importar()">Importar</button>
-<button onclick="exportar()">Exportar CSV</button>
 <button onclick="logout()">Sair</button>
 
 </nav>
@@ -96,7 +85,7 @@ background:#eee
 <h3>Lucro</h3>
 <div id="lucro"></div>
 
-<h3>Milhas acumuladas</h3>
+<h3>Milhas</h3>
 <div id="milhas"></div>
 
 <h3>Estoque por modelo</h3>
@@ -104,6 +93,76 @@ background:#eee
 
 <h3>Lucro por modelo</h3>
 <div id="lucroModelo"></div>
+
+</section>
+
+<section id="lojas">
+
+<h3>Cadastrar loja</h3>
+
+<input id="lojaNome">
+
+<button onclick="addLoja()">Salvar</button>
+
+<div id="listaLojas"></div>
+
+</section>
+
+<section id="modelos">
+
+<h3>Criar modelo</h3>
+
+<input id="modeloNome" placeholder="Modelo">
+
+<input id="modeloCap" placeholder="Capacidade">
+
+<input id="modeloCor" placeholder="Cor">
+
+<button onclick="criarModelo()">Salvar</button>
+
+<div id="listaModelos"></div>
+
+</section>
+
+<section id="estoque">
+
+<h3>Cadastrar aparelho</h3>
+
+<select id="modeloSelect"></select>
+
+<input id="codigo" placeholder="IMEI">
+
+<button onclick="scanner()">Scanner</button>
+
+<div id="reader" style="width:300px"></div>
+
+<input id="custo" placeholder="Custo">
+
+<input id="milhasAdd" placeholder="Milhas">
+
+<button onclick="addEstoque()">Adicionar</button>
+
+<h3>Buscar</h3>
+
+<input id="busca" onkeyup="buscar()">
+
+<table>
+
+<thead>
+
+<tr>
+<th>Modelo</th>
+<th>IMEI</th>
+<th>Custo</th>
+<th>Milhas</th>
+<th>Ação</th>
+</tr>
+
+</thead>
+
+<tbody id="tabelaEstoque"></tbody>
+
+</table>
 
 </section>
 
@@ -121,14 +180,6 @@ background:#eee
 
 <input id="valorVenda" placeholder="Valor">
 
-<select id="forma">
-<option>Pix</option>
-<option>Dinheiro</option>
-<option>Cartão</option>
-<option>Transferência</option>
-<option>Prazo</option>
-</select>
-
 <select id="status">
 <option>Recebido</option>
 <option>Pendente</option>
@@ -136,86 +187,157 @@ background:#eee
 
 <button onclick="vender()">Registrar venda</button>
 
+<table>
+
+<thead>
+
+<tr>
+<th>Loja</th>
+<th>Comprador</th>
+<th>IMEI</th>
+<th>Valor</th>
+<th>Lucro</th>
+<th>Status</th>
+<th>Ação</th>
+</tr>
+
+</thead>
+
+<tbody id="tabelaVendas"></tbody>
+
+</table>
+
 </section>
+
+<section id="receber">
+
+<h3>Contas a receber</h3>
+
+<table>
+
+<thead>
+
+<tr>
+<th>Loja</th>
+<th>Comprador</th>
+<th>Valor</th>
+<th>Ação</th>
+</tr>
+
+</thead>
+
+<tbody id="tabelaReceber"></tbody>
+
+</table>
+
+</section>
+
+<section id="cancelamentos">
+
+<h3>Histórico de cancelamentos</h3>
+
+<table>
+
+<thead>
+
+<tr>
+<th>Loja</th>
+<th>Comprador</th>
+<th>IMEI</th>
+<th>Valor</th>
+<th>Motivo</th>
+<th>Data</th>
+</tr>
+
+</thead>
+
+<tbody id="tabelaCancelamentos"></tbody>
+
+</table>
+
+</section>
+
+</div>
 
 <script>
 
-function buscarIMEI(){
+let estoque=[]
+let vendas=[]
+let modelos=[]
+let lojas=[]
+let cancelamentos=[]
 
-let termo=codigoVenda.value
+function salvar(){
 
-sugestoes.innerHTML=""
-
-estoque.filter(p=>p.codigo.includes(termo))
-
-.forEach(p=>{
-
-sugestoes.innerHTML+=`<div onclick="selecionarIMEI('${p.codigo}')">${p.codigo}</div>`
-
-})
+localStorage.setItem("leonDB",JSON.stringify({estoque,vendas,modelos,lojas,cancelamentos}))
 
 }
 
-function selecionarIMEI(c){
+function carregar(){
 
-codigoVenda.value=c
+let dados=localStorage.getItem("leonDB")
 
-sugestoes.innerHTML=""
+if(dados){
 
-}
+let obj=JSON.parse(dados)
 
-function dashboard(){
+estoque=obj.estoque||[]
 
-let caixa=0
-let lucro=0
-let milhas=0
+vendas=obj.vendas||[]
 
-let contagem={}
-let lucroM={}
+modelos=obj.modelos||[]
 
-vendas.forEach(v=>{
+lojas=obj.lojas||[]
 
-if(v.status==="Recebido") caixa+=v.valor
-
-lucro+=v.lucro
-
-if(!lucroM[v.modelo]) lucroM[v.modelo]=0
-
-lucroM[v.modelo]+=v.lucro
-
-})
-
-estoque.forEach(p=>{
-
-milhas+=p.milhas
-
-if(!contagem[p.modelo]) contagem[p.modelo]=0
-
-contagem[p.modelo]++
-
-})
-
-caixa.innerHTML="R$ "+caixa
-
-lucro.innerHTML="R$ "+lucro
-
-milhas.innerHTML=milhas+" pontos"
-
-estoqueModelo.innerHTML=""
-
-for(let m in contagem){
-
-estoqueModelo.innerHTML+=m+" — "+contagem[m]+"<br>"
+cancelamentos=obj.cancelamentos||[]
 
 }
 
-lucroModelo.innerHTML=""
+}
 
-for(let m in lucroM){
+function login(){
 
-lucroModelo.innerHTML+=m+" — "+lucroM[m]+"<br>"
+if(user.value==="Leon" && pass.value==="Leon@017"){
+
+login.style.display="none"
+
+app.style.display="block"
+
+carregar()
+
+renderAll()
 
 }
+
+}
+
+function logout(){
+
+location.reload()
+
+}
+
+function show(id){
+
+document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
+
+document.getElementById(id).classList.add("active")
+
+}
+
+function renderAll(){
+
+renderLojas()
+
+renderModelos()
+
+renderEstoque()
+
+renderVendas()
+
+renderCancelamentos()
+
+dashboard()
 
 }
 
