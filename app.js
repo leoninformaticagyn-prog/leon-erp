@@ -3,10 +3,17 @@ let vendas=[]
 
 function login(){
 
-if(user.value==="Leon" && pass.value==="Leon@017"){
+let u = document.getElementById("user").value
+let p = document.getElementById("pass").value
 
-login.style.display="none"
-app.style.display="block"
+if(u==="Leon" && p==="Leon@017"){
+
+document.getElementById("login").style.display="none"
+document.getElementById("app").style.display="block"
+
+}else{
+
+alert("Login inválido")
 
 }
 
