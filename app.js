@@ -35,8 +35,6 @@ document.getElementById(id).classList.add("active")
 
 function addEstoque(){
 
-function addEstoque(){
-
 let imei=codigo.value
 
 if(estoque.find(p=>p.codigo===imei)){
@@ -60,12 +58,6 @@ milhas:parseFloat(milhasAdd.value)
 renderEstoque()
 dashboard()
 
-}
-
-})
-
-renderEstoque()
-dashboard()
 
 }
 
