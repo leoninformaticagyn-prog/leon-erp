@@ -304,3 +304,26 @@ a.download="relatorio_vendas.csv"
 a.click()
 
 }
+function iniciarScanner(){
+
+const html5QrCode = new Html5Qrcode("reader")
+
+html5QrCode.start(
+{ facingMode: "environment" },
+{ fps: 10, qrbox: 250 },
+
+(code)=>{
+
+document.getElementById("codigo").value = code
+
+html5QrCode.stop()
+
+}
+
+).catch(err=>{
+console.log("scanner não iniciado")
+})
+
+}
+
+setTimeout(iniciarScanner,1000)
