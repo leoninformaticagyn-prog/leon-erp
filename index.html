@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
 
 <meta charset="UTF-8">
@@ -8,85 +7,7 @@
 
 <title>Leon Vendas PRO</title>
 
-<script src="https://unpkg.com/html5-qrcode"></script>
-
-<style>
-
-body{
-font-family:Arial;
-margin:0;
-background:#f4f6fa
-}
-
-header{
-background:black;
-color:white;
-padding:15px;
-text-align:center
-}
-
-nav{
-display:flex;
-flex-wrap:wrap;
-gap:10px;
-padding:10px;
-justify-content:center;
-background:#222
-}
-
-nav button{
-padding:10px;
-border:none;
-border-radius:5px;
-cursor:pointer
-}
-
-section{
-display:none;
-padding:20px
-}
-
-section.active{
-display:block
-}
-
-input,select{
-padding:8px;
-margin:5px
-}
-
-table{
-width:100%;
-border-collapse:collapse;
-background:white
-}
-
-th,td{
-border:1px solid #ddd;
-padding:8px
-}
-
-#login{
-text-align:center;
-margin-top:120px
-}
-
-#sugestoes{
-background:white;
-border:1px solid #ccc;
-max-width:300px
-}
-
-#sugestoes div{
-padding:6px;
-cursor:pointer
-}
-
-#sugestoes div:hover{
-background:#eee
-}
-
-</style>
+<link rel="stylesheet" href="style.css">
 
 </head>
 
@@ -114,103 +35,45 @@ background:#eee
 <nav>
 
 <button onclick="show('dashboard')">Dashboard</button>
-<button onclick="show('clientes')">Clientes</button>
-<button onclick="show('modelos')">Modelos</button>
-<button onclick="show('scanner')">Scanner</button>
-<button onclick="show('manual')">Cadastrar Aparelho</button>
 <button onclick="show('estoque')">Estoque</button>
 <button onclick="show('vendas')">Vendas</button>
-<button onclick="show('cancelamentos')">Cancelamentos</button>
 <button onclick="show('receber')">Contas a Receber</button>
-<button onclick="logout()">SAIR</button>
+<button onclick="backup()">Exportar Backup</button>
+<button onclick="importar()">Importar Backup</button>
+<button onclick="exportarExcel()">Exportar Excel</button>
+<button onclick="logout()">Sair</button>
 
 </nav>
 
 <section id="dashboard" class="active">
 
-<h3>Estoque por modelo</h3>
+<h3>Caixa</h3>
+<div id="caixa"></div>
 
-<div id="contadorEstoque"></div>
-
-<h3>Caixa de hoje</h3>
-
-<div id="caixaHoje"></div>
-
-<h3>Lucro hoje</h3>
-
-<div id="lucroHoje"></div>
+<h3>Lucro</h3>
+<div id="lucro"></div>
 
 <h3>Milhas acumuladas</h3>
-
-<div id="milhasTotal"></div>
-
-</section>
-
-<section id="clientes">
-
-<h3>Cadastrar Loja</h3>
-
-<input id="clienteNome" placeholder="Nome da loja">
-
-<button onclick="salvarCliente()">Salvar</button>
-
-<h4>Lojas cadastradas</h4>
-
-<div id="listaClientes"></div>
-
-</section>
-
-<section id="modelos">
-
-<h3>Criar Modelo</h3>
-
-<input id="modeloNome" placeholder="Modelo">
-
-<input id="capacidade" placeholder="Capacidade">
-
-<input id="cor" placeholder="Cor">
-
-<button onclick="salvarModelo()">Salvar</button>
-
-<h4>Modelos cadastrados</h4>
-
-<div id="listaModelos"></div>
-
-</section>
-
-<section id="scanner">
-
-<h3>Scanner</h3>
-
-<select id="modeloScanner"></select>
-
-<div id="reader" style="width:300px"></div>
-
-<button onclick="startScanner()">Iniciar Scanner</button>
-
-</section>
-
-<section id="manual">
-
-<h3>Cadastrar Aparelho</h3>
-
-<select id="modeloManual"></select>
-
-<input id="codigoManual" placeholder="IMEI ou SN">
-
-<input id="custoManual" placeholder="Custo do aparelho">
-
-<input id="milhasManual" placeholder="Milhas / Pontos gerados">
-
-<button onclick="adicionarManual()">Cadastrar</button>
+<div id="milhas"></div>
 
 </section>
 
 <section id="estoque">
 
-<h3>Estoque</h3>
+<h3>Cadastrar aparelho</h3>
 
-<input id="buscaEstoque" placeholder="Buscar IMEI, modelo, capacidade ou cor" onkeyup="buscarEstoque()">
+<input id="modelo" placeholder="Modelo">
+<input id="cap" placeholder="Capacidade">
+<input id="cor" placeholder="Cor">
+<input id="codigo" placeholder="IMEI ou SN">
+<input id="custo" placeholder="Custo">
+<input id="milhasAdd" placeholder="Milhas">
+
+<button onclick="addEstoque()">Adicionar</button>
+
+<h3>Buscar</h3>
+
+<input id="busca" onkeyup="buscar()">
 
 <table>
 
@@ -218,12 +81,11 @@ background:#eee
 
 <tr>
 <th>Modelo</th>
-<th>Capacidade</th>
+<th>Cap</th>
 <th>Cor</th>
 <th>Código</th>
 <th>Custo</th>
 <th>Milhas</th>
-<th>Tipo</th>
 </tr>
 
 </thead>
@@ -236,19 +98,15 @@ background:#eee
 
 <section id="vendas">
 
-<h3>Registrar Venda</h3>
+<h3>Registrar venda</h3>
 
-<select id="clienteVenda"></select>
-
+<input id="cliente" placeholder="Cliente">
 <input id="comprador" placeholder="Comprador">
+<input id="codigoVenda" placeholder="IMEI">
 
-<input id="codigoVenda" placeholder="IMEI ou SN" onkeyup="buscarVenda()">
+<input id="valorVenda" placeholder="Valor">
 
-<div id="sugestoes"></div>
-
-<input id="valorVenda" placeholder="Valor da venda">
-
-<select id="formaPagamento">
+<select id="forma">
 
 <option>Pix</option>
 <option>Dinheiro</option>
@@ -258,30 +116,27 @@ background:#eee
 
 </select>
 
-<select id="statusPagamento">
+<select id="status">
 
 <option>Recebido</option>
 <option>Pendente</option>
 
 </select>
 
-<button onclick="registrarVenda()">Registrar Venda</button>
+<button onclick="vender()">Registrar venda</button>
 
-<h3>Histórico de Vendas</h3>
+<h3>Histórico</h3>
 
 <table>
 
 <thead>
 
 <tr>
-<th>Loja</th>
+<th>Cliente</th>
 <th>Código</th>
 <th>Valor</th>
 <th>Lucro</th>
-<th>Pagamento</th>
 <th>Status</th>
-<th>Data</th>
-<th>Ação</th>
 </tr>
 
 </thead>
@@ -294,7 +149,7 @@ background:#eee
 
 <section id="receber">
 
-<h3>Contas a Receber</h3>
+<h3>Contas a receber</h3>
 
 <table>
 
@@ -314,621 +169,9 @@ background:#eee
 
 </section>
 
-<section id="cancelamentos">
-
-<h3>Histórico de Cancelamentos</h3>
-
-<table>
-
-<thead>
-
-<tr>
-<th>Loja</th>
-<th>Código</th>
-<th>Valor</th>
-<th>Motivo</th>
-<th>Data</th>
-</tr>
-
-</thead>
-
-<tbody id="tabelaCancelamentos"></tbody>
-
-</table>
-
-</section>
-
 </div>
-<script>
 
-let db
-
-let request = indexedDB.open("LeonDB",2)
-
-request.onupgradeneeded = function(e){
-
-db = e.target.result
-
-if(!db.objectStoreNames.contains("clientes"))
-db.createObjectStore("clientes",{keyPath:"id",autoIncrement:true})
-
-if(!db.objectStoreNames.contains("modelos"))
-db.createObjectStore("modelos",{keyPath:"id",autoIncrement:true})
-
-if(!db.objectStoreNames.contains("estoque"))
-db.createObjectStore("estoque",{keyPath:"codigo"})
-
-if(!db.objectStoreNames.contains("vendas"))
-db.createObjectStore("vendas",{keyPath:"id",autoIncrement:true})
-
-if(!db.objectStoreNames.contains("cancelamentos"))
-db.createObjectStore("cancelamentos",{keyPath:"id",autoIncrement:true})
-
-}
-
-request.onsuccess=function(e){
-
-db=e.target.result
-
-init()
-
-}
-
-function init(){
-
-if(localStorage.getItem("logado")){
-
-document.getElementById("login").style.display="none"
-document.getElementById("app").style.display="block"
-
-}
-
-carregarClientes()
-carregarModelos()
-carregarEstoque()
-carregarVendas()
-carregarCancelamentos()
-carregarReceber()
-atualizarDashboard()
-
-}
-
-function login(){
-
-let u=document.getElementById("user").value
-let p=document.getElementById("pass").value
-
-if(u==="Leon" && p==="Leon@017"){
-
-localStorage.setItem("logado","sim")
-location.reload()
-
-}else{
-
-alert("Login inválido")
-
-}
-
-}
-
-function logout(){
-
-localStorage.removeItem("logado")
-location.reload()
-
-}
-
-function show(id){
-
-document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
-
-document.getElementById(id).classList.add("active")
-
-}
-
-function detectarTipo(c){
-
-if(c.length==15 && c.startsWith("35")) return "IMEI"
-
-if(c.length==17) return "SN"
-
-return "DESCONHECIDO"
-
-}
-
-function salvarCliente(){
-
-let nome=document.getElementById("clienteNome").value
-
-db.transaction("clientes","readwrite")
-.objectStore("clientes")
-.add({nome})
-
-carregarClientes()
-
-}
-
-function excluirCliente(id){
-
-if(!confirm("Excluir loja?")) return
-
-db.transaction("clientes","readwrite")
-.objectStore("clientes")
-.delete(id)
-
-carregarClientes()
-
-}
-
-function carregarClientes(){
-
-let lista=document.getElementById("listaClientes")
-let select=document.getElementById("clienteVenda")
-
-lista.innerHTML=""
-select.innerHTML=""
-
-db.transaction("clientes")
-.objectStore("clientes")
-.openCursor()
-.onsuccess=function(e){
-
-let c=e.target.result
-
-if(c){
-
-lista.innerHTML+=`
-<div>
-${c.value.nome}
-<button onclick="excluirCliente(${c.key})">Excluir</button>
-</div>
-`
-
-select.innerHTML+=`<option>${c.value.nome}</option>`
-
-c.continue()
-
-}
-
-}
-
-}
-
-function salvarModelo(){
-
-let nome=document.getElementById("modeloNome").value
-let cap=document.getElementById("capacidade").value
-let cor=document.getElementById("cor").value
-
-db.transaction("modelos","readwrite")
-.objectStore("modelos")
-.add({nome,cap,cor})
-
-carregarModelos()
-
-}
-
-function excluirModelo(id){
-
-if(!confirm("Excluir modelo?")) return
-
-db.transaction("modelos","readwrite")
-.objectStore("modelos")
-.delete(id)
-
-carregarModelos()
-
-}
-
-function carregarModelos(){
-
-let lista=document.getElementById("listaModelos")
-let s1=document.getElementById("modeloScanner")
-let s2=document.getElementById("modeloManual")
-
-lista.innerHTML=""
-s1.innerHTML=""
-s2.innerHTML=""
-
-db.transaction("modelos")
-.objectStore("modelos")
-.openCursor()
-.onsuccess=function(e){
-
-let m=e.target.result
-
-if(m){
-
-let txt=`${m.value.nome}|${m.value.cap}|${m.value.cor}`
-
-lista.innerHTML+=`
-<div>
-${m.value.nome} ${m.value.cap} ${m.value.cor}
-<button onclick="excluirModelo(${m.key})">Excluir</button>
-</div>
-`
-
-s1.innerHTML+=`<option value="${txt}">${m.value.nome} ${m.value.cap} ${m.value.cor}</option>`
-
-s2.innerHTML+=`<option value="${txt}">${m.value.nome} ${m.value.cap} ${m.value.cor}</option>`
-
-m.continue()
-
-}
-
-}
-
-}
-
-function adicionarManual(){
-
-let modelo=document.getElementById("modeloManual").value.split("|")
-
-let codigo=document.getElementById("codigoManual").value
-let custo=document.getElementById("custoManual").value
-let milhas=document.getElementById("milhasManual").value
-
-let tipo=detectarTipo(codigo)
-
-db.transaction("estoque","readwrite")
-.objectStore("estoque")
-.add({
-
-codigo,
-modelo:modelo[0],
-cap:modelo[1],
-cor:modelo[2],
-custo:parseFloat(custo),
-milhas:parseFloat(milhas||0),
-tipo
-
-})
-
-carregarEstoque()
-atualizarDashboard()
-
-}
-
-function carregarEstoque(){
-
-let tabela=document.getElementById("tabelaEstoque")
-
-tabela.innerHTML=""
-
-db.transaction("estoque")
-.objectStore("estoque")
-.openCursor()
-.onsuccess=function(e){
-
-let c=e.target.result
-
-if(c){
-
-let p=c.value
-
-tabela.innerHTML+=`
-<tr>
-<td>${p.modelo}</td>
-<td>${p.cap}</td>
-<td>${p.cor}</td>
-<td>${p.codigo}</td>
-<td>${p.custo}</td>
-<td>${p.milhas}</td>
-<td>${p.tipo}</td>
-</tr>
-`
-
-c.continue()
-
-}
-
-}
-
-}
-
-function registrarVenda(){
-
-let codigo=document.getElementById("codigoVenda").value
-let cliente=document.getElementById("clienteVenda").value
-let comprador=document.getElementById("comprador").value
-let valor=parseFloat(document.getElementById("valorVenda").value)
-let forma=document.getElementById("formaPagamento").value
-let status=document.getElementById("statusPagamento").value
-
-let tx=db.transaction(["estoque","vendas"],"readwrite")
-
-let req=tx.objectStore("estoque").get(codigo)
-
-req.onsuccess=function(){
-
-let p=req.result
-
-if(!p){
-
-alert("Aparelho não encontrado")
-
-return
-
-}
-
-let lucro=valor-p.custo
-
-tx.objectStore("vendas").add({
-
-codigo,
-cliente,
-comprador,
-valor,
-forma,
-status,
-lucro,
-data:new Date()
-
-})
-
-tx.objectStore("estoque").delete(codigo)
-
-carregarEstoque()
-carregarVendas()
-carregarReceber()
-atualizarDashboard()
-
-alert("venda concluida com sucesso")
-
-}
-
-}
-
-function carregarVendas(){
-
-let tabela=document.getElementById("tabelaVendas")
-
-tabela.innerHTML=""
-
-db.transaction("vendas")
-.objectStore("vendas")
-.openCursor()
-.onsuccess=function(e){
-
-let v=e.target.result
-
-if(v){
-
-let d=v.value
-
-tabela.innerHTML+=`
-<tr>
-<td>${d.cliente}</td>
-<td>${d.codigo}</td>
-<td>${d.valor}</td>
-<td>${d.lucro}</td>
-<td>${d.forma}</td>
-<td>${d.status}</td>
-<td>${new Date(d.data).toLocaleString()}</td>
-<td><button onclick="cancelarVenda(${v.key})">Cancelar</button></td>
-</tr>
-`
-
-v.continue()
-
-}
-
-}
-
-}
-
-function cancelarVenda(id){
-
-if(!confirm("Cancelar venda?")) return
-
-let motivo=prompt("Motivo")
-
-let tx=db.transaction(["vendas","cancelamentos"],"readwrite")
-
-let store=tx.objectStore("vendas")
-
-let req=store.get(id)
-
-req.onsuccess=function(){
-
-let venda=req.result
-
-tx.objectStore("cancelamentos").add({
-
-...venda,
-motivo,
-dataCancelamento:new Date()
-
-})
-
-store.delete(id)
-
-carregarVendas()
-carregarCancelamentos()
-
-}
-
-}
-
-function carregarCancelamentos(){
-
-let tabela=document.getElementById("tabelaCancelamentos")
-
-tabela.innerHTML=""
-
-db.transaction("cancelamentos")
-.objectStore("cancelamentos")
-.openCursor()
-.onsuccess=function(e){
-
-let c=e.target.result
-
-if(c){
-
-let v=c.value
-
-tabela.innerHTML+=`
-<tr>
-<td>${v.cliente}</td>
-<td>${v.codigo}</td>
-<td>${v.valor}</td>
-<td>${v.motivo}</td>
-<td>${new Date(v.dataCancelamento).toLocaleString()}</td>
-</tr>
-`
-
-c.continue()
-
-}
-
-}
-
-}
-
-function carregarReceber(){
-
-let tabela=document.getElementById("tabelaReceber")
-
-tabela.innerHTML=""
-
-db.transaction("vendas")
-.objectStore("vendas")
-.openCursor()
-.onsuccess=function(e){
-
-let c=e.target.result
-
-if(c){
-
-let v=c.value
-
-if(v.status==="Pendente"){
-
-tabela.innerHTML+=`
-<tr>
-<td>${v.cliente}</td>
-<td>${v.valor}</td>
-<td><button onclick="marcarPago(${c.key})">Marcar pago</button></td>
-</tr>
-`
-
-}
-
-c.continue()
-
-}
-
-}
-
-}
-
-function marcarPago(id){
-
-let tx=db.transaction("vendas","readwrite")
-
-let store=tx.objectStore("vendas")
-
-let req=store.get(id)
-
-req.onsuccess=function(){
-
-let venda=req.result
-
-venda.status="Recebido"
-
-store.put(venda)
-
-carregarReceber()
-atualizarDashboard()
-
-}
-
-}
-
-function atualizarDashboard(){
-
-let estoqueContador={}
-let totalCaixa=0
-let lucro=0
-let milhas=0
-
-db.transaction("estoque")
-.objectStore("estoque")
-.openCursor()
-.onsuccess=function(e){
-
-let c=e.target.result
-
-if(c){
-
-let p=c.value
-
-let chave=p.modelo+" "+p.cap+" "+p.cor
-
-if(!estoqueContador[chave]) estoqueContador[chave]=0
-
-estoqueContador[chave]++
-
-milhas+=p.milhas||0
-
-c.continue()
-
-}else{
-
-let div=document.getElementById("contadorEstoque")
-
-div.innerHTML=""
-
-for(let m in estoqueContador){
-
-div.innerHTML+=m+" — "+estoqueContador[m]+" aparelhos<br>"
-
-}
-
-document.getElementById("milhasTotal").innerHTML=milhas+" pontos"
-
-}
-
-}
-
-db.transaction("vendas")
-.objectStore("vendas")
-.openCursor()
-.onsuccess=function(e){
-
-let c=e.target.result
-
-if(c){
-
-let v=c.value
-
-if(v.status==="Recebido"){
-
-totalCaixa+=parseFloat(v.valor)
-
-}
-
-lucro+=parseFloat(v.lucro||0)
-
-c.continue()
-
-}else{
-
-document.getElementById("caixaHoje").innerHTML=
-"R$ "+totalCaixa.toLocaleString("pt-BR",{minimumFractionDigits:2})
-
-document.getElementById("lucroHoje").innerHTML=
-"R$ "+lucro.toLocaleString("pt-BR",{minimumFractionDigits:2})
-
-}
-
-}
-
-}
-
-}
-
-</script>
+<script src="app.js"></script>
 
 </body>
 </html>
