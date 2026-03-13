@@ -7,7 +7,68 @@
 
 <title>Leon Vendas PRO</title>
 
-<link rel="stylesheet" href="style.css">
+<style>
+
+body{
+font-family:Arial;
+margin:0;
+background:#f4f6fa
+}
+
+header{
+background:black;
+color:white;
+padding:15px;
+text-align:center
+}
+
+nav{
+display:flex;
+flex-wrap:wrap;
+gap:10px;
+padding:10px;
+justify-content:center;
+background:#222
+}
+
+nav button{
+padding:10px;
+border:none;
+border-radius:5px;
+cursor:pointer
+}
+
+section{
+display:none;
+padding:20px
+}
+
+section.active{
+display:block
+}
+
+input,select{
+padding:8px;
+margin:5px
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+background:white
+}
+
+th,td{
+border:1px solid #ddd;
+padding:8px
+}
+
+#login{
+text-align:center;
+margin-top:120px
+}
+
+</style>
 
 </head>
 
@@ -27,9 +88,7 @@
 <div id="app" style="display:none">
 
 <header>
-
 <h2>Leon Vendas PRO</h2>
-
 </header>
 
 <nav>
@@ -38,9 +97,9 @@
 <button onclick="show('estoque')">Estoque</button>
 <button onclick="show('vendas')">Vendas</button>
 <button onclick="show('receber')">Contas a Receber</button>
-<button onclick="backup()">Exportar Backup</button>
-<button onclick="importar()">Importar Backup</button>
-<button onclick="exportarExcel()">Exportar Excel</button>
+<button onclick="backup()">Backup</button>
+<button onclick="importar()">Importar</button>
+<button onclick="exportar()">Exportar Excel</button>
 <button onclick="logout()">Sair</button>
 
 </nav>
@@ -171,7 +230,337 @@
 
 </div>
 
-<script src="app.js"></script>
+<script>
+
+let estoque=[]
+let vendas=[]
+
+function salvar(){
+
+localStorage.setItem("leonDB",JSON.stringify({
+estoque,
+vendas
+}))
+
+}
+
+function carregar(){
+
+let dados=localStorage.getItem("leonDB")
+
+if(dados){
+
+let obj=JSON.parse(dados)
+
+estoque=obj.estoque||[]
+vendas=obj.vendas||[]
+
+}
+
+}
+
+function login(){
+
+let u=document.getElementById("user").value
+let p=document.getElementById("pass").value
+
+if(u==="Leon" && p==="Leon@017"){
+
+document.getElementById("login").style.display="none"
+document.getElementById("app").style.display="block"
+
+carregar()
+renderEstoque()
+renderVendas()
+dashboard()
+
+}else{
+
+alert("Login inválido")
+
+}
+
+}
+
+function logout(){
+
+location.reload()
+
+}
+
+function show(id){
+
+document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
+
+document.getElementById(id).classList.add("active")
+
+}
+
+function addEstoque(){
+
+estoque.push({
+
+modelo:modelo.value,
+cap:cap.value,
+cor:cor.value,
+codigo:codigo.value,
+custo:parseFloat(custo.value),
+milhas:parseFloat(milhasAdd.value)
+
+})
+
+salvar()
+renderEstoque()
+dashboard()
+
+}
+
+function renderEstoque(){
+
+tabelaEstoque.innerHTML=""
+
+estoque.forEach(p=>{
+
+tabelaEstoque.innerHTML+=`
+
+<tr>
+<td>${p.modelo}</td>
+<td>${p.cap}</td>
+<td>${p.cor}</td>
+<td>${p.codigo}</td>
+<td>${p.custo}</td>
+<td>${p.milhas}</td>
+</tr>
+
+`
+
+})
+
+}
+
+function buscar(){
+
+let t=busca.value.toLowerCase()
+
+tabelaEstoque.innerHTML=""
+
+estoque.filter(p=>
+
+p.codigo.includes(t) ||
+p.modelo.toLowerCase().includes(t) ||
+p.cap.includes(t) ||
+p.cor.toLowerCase().includes(t)
+
+).forEach(p=>{
+
+tabelaEstoque.innerHTML+=`
+
+<tr>
+<td>${p.modelo}</td>
+<td>${p.cap}</td>
+<td>${p.cor}</td>
+<td>${p.codigo}</td>
+<td>${p.custo}</td>
+<td>${p.milhas}</td>
+</tr>
+
+`
+
+})
+
+}
+
+function vender(){
+
+let imei=codigoVenda.value
+
+let aparelho=estoque.find(p=>p.codigo===imei)
+
+if(!aparelho){
+
+alert("Aparelho não encontrado")
+return
+
+}
+
+let valor=parseFloat(valorVenda.value)
+
+let lucro=valor-aparelho.custo
+
+vendas.push({
+
+cliente:cliente.value,
+codigo:imei,
+valor,
+lucro,
+status:status.value
+
+})
+
+estoque=estoque.filter(p=>p.codigo!==imei)
+
+salvar()
+renderEstoque()
+renderVendas()
+dashboard()
+
+}
+
+function renderVendas(){
+
+tabelaVendas.innerHTML=""
+
+vendas.forEach(v=>{
+
+tabelaVendas.innerHTML+=`
+
+<tr>
+<td>${v.cliente}</td>
+<td>${v.codigo}</td>
+<td>${v.valor}</td>
+<td>${v.lucro}</td>
+<td>${v.status}</td>
+</tr>
+
+`
+
+})
+
+renderReceber()
+
+}
+
+function renderReceber(){
+
+tabelaReceber.innerHTML=""
+
+vendas.filter(v=>v.status==="Pendente")
+
+.forEach(v=>{
+
+tabelaReceber.innerHTML+=`
+
+<tr>
+<td>${v.cliente}</td>
+<td>${v.valor}</td>
+<td><button onclick="marcarPago('${v.codigo}')">Pago</button></td>
+</tr>
+
+`
+
+})
+
+}
+
+function marcarPago(c){
+
+let v=vendas.find(x=>x.codigo===c)
+
+v.status="Recebido"
+
+salvar()
+renderVendas()
+dashboard()
+
+}
+
+function dashboard(){
+
+let caixa=0
+let lucro=0
+let milhas=0
+
+vendas.forEach(v=>{
+
+if(v.status==="Recebido") caixa+=v.valor
+
+lucro+=v.lucro
+
+})
+
+estoque.forEach(p=>{
+
+milhas+=p.milhas
+
+})
+
+document.getElementById("caixa").innerHTML="R$ "+caixa
+document.getElementById("lucro").innerHTML="R$ "+lucro
+document.getElementById("milhas").innerHTML=milhas+" pontos"
+
+}
+
+function backup(){
+
+let blob=new Blob([JSON.stringify({estoque,vendas})])
+
+let a=document.createElement("a")
+
+a.href=URL.createObjectURL(blob)
+
+a.download="backup_leon_vendas.json"
+
+a.click()
+
+}
+
+function importar(){
+
+let input=document.createElement("input")
+
+input.type="file"
+
+input.onchange=e=>{
+
+let file=e.target.files[0]
+
+let reader=new FileReader()
+
+reader.onload=function(){
+
+let data=JSON.parse(reader.result)
+
+estoque=data.estoque
+vendas=data.vendas
+
+salvar()
+renderEstoque()
+renderVendas()
+dashboard()
+
+}
+
+reader.readAsText(file)
+
+}
+
+input.click()
+
+}
+
+function exportar(){
+
+let texto="Cliente,Código,Valor,Lucro,Status\n"
+
+vendas.forEach(v=>{
+
+texto+=`${v.cliente},${v.codigo},${v.valor},${v.lucro},${v.status}\n`
+
+})
+
+let blob=new Blob([texto])
+
+let a=document.createElement("a")
+
+a.href=URL.createObjectURL(blob)
+
+a.download="relatorio_vendas.csv"
+
+a.click()
+
+}
+
+</script>
 
 </body>
 </html>
