@@ -340,7 +340,298 @@ renderCancelamentos()
 dashboard()
 
 }
+function renderLojas(){
+listaLojas.innerHTML=""
+vendaLoja.innerHTML=""
+lojas.forEach((l,i)=>{
+listaLojas.innerHTML+=l+" <button onclick='delLoja("+i+")'>Excluir</button><br>"
+vendaLoja.innerHTML+="<option>"+l+"</option>"
+})
+}
 
+function addLoja(){
+if(!lojaNome.value) return
+lojas.push(lojaNome.value)
+lojaNome.value=""
+salvar()
+renderLojas()
+}
+
+function delLoja(i){
+if(!confirm("Excluir loja?")) return
+lojas.splice(i,1)
+salvar()
+renderLojas()
+}
+
+function criarModelo(){
+let m=modeloNome.value+" "+modeloCap.value+" "+modeloCor.value
+modelos.push(m)
+modeloNome.value=""
+modeloCap.value=""
+modeloCor.value=""
+salvar()
+renderModelos()
+}
+
+function renderModelos(){
+listaModelos.innerHTML=""
+modeloSelect.innerHTML=""
+modelos.forEach((m,i)=>{
+listaModelos.innerHTML+=m+" <button onclick='delModelo("+i+")'>Excluir</button><br>"
+modeloSelect.innerHTML+="<option>"+m+"</option>"
+})
+}
+
+function delModelo(i){
+if(!confirm("Excluir modelo?")) return
+modelos.splice(i,1)
+salvar()
+renderModelos()
+}
+
+function scanner(){
+const html5QrCode=new Html5Qrcode("reader")
+html5QrCode.start(
+{ facingMode:"environment" },
+{ fps:10, qrbox:250 },
+(decodedText)=>{
+codigo.value=decodedText
+html5QrCode.stop()
+}
+)
+}
+
+function addEstoque(){
+if(!codigo.value) return
+estoque.push({
+modelo:modeloSelect.value,
+codigo:codigo.value,
+custo:parseFloat(custo.value)||0,
+milhas:parseFloat(milhasAdd.value)||0
+})
+codigo.value=""
+custo.value=""
+milhasAdd.value=""
+salvar()
+renderEstoque()
+dashboard()
+}
+
+function renderEstoque(){
+tabelaEstoque.innerHTML=""
+estoque.forEach((p,i)=>{
+tabelaEstoque.innerHTML+=`
+<tr>
+<td>${p.modelo}</td>
+<td>${p.codigo}</td>
+<td>${p.custo}</td>
+<td>${p.milhas}</td>
+<td><button onclick="delEstoque(${i})">Excluir</button></td>
+</tr>`
+})
+}
+
+function delEstoque(i){
+if(!confirm("Excluir aparelho?")) return
+estoque.splice(i,1)
+salvar()
+renderEstoque()
+dashboard()
+}
+
+function buscar(){
+let t=busca.value.toLowerCase()
+tabelaEstoque.innerHTML=""
+estoque.filter(p=>p.codigo.includes(t)||p.modelo.toLowerCase().includes(t))
+.forEach((p,i)=>{
+tabelaEstoque.innerHTML+=`
+<tr>
+<td>${p.modelo}</td>
+<td>${p.codigo}</td>
+<td>${p.custo}</td>
+<td>${p.milhas}</td>
+<td><button onclick="delEstoque(${i})">Excluir</button></td>
+</tr>`
+})
+}
+
+function buscarIMEI(){
+let termo=codigoVenda.value
+sugestoes.innerHTML=""
+estoque.filter(p=>p.codigo.includes(termo)).forEach(p=>{
+sugestoes.innerHTML+=`<div onclick="selecionarIMEI('${p.codigo}')">${p.codigo}</div>`
+})
+}
+
+function selecionarIMEI(c){
+codigoVenda.value=c
+sugestoes.innerHTML=""
+}
+
+function vender(){
+let imei=codigoVenda.value
+let aparelho=estoque.find(p=>p.codigo===imei)
+if(!aparelho){alert("IMEI não encontrado");return}
+let valor=parseFloat(valorVenda.value)||0
+let lucro=valor-aparelho.custo
+vendas.push({
+loja:vendaLoja.value,
+comprador:comprador.value,
+codigo:imei,
+valor,
+lucro,
+status:status.value,
+data:new Date().toLocaleString()
+})
+estoque=estoque.filter(p=>p.codigo!==imei)
+salvar()
+renderEstoque()
+renderVendas()
+dashboard()
+}
+
+function renderVendas(){
+tabelaVendas.innerHTML=""
+vendas.forEach((v,i)=>{
+tabelaVendas.innerHTML+=`
+<tr>
+<td>${v.loja}</td>
+<td>${v.comprador}</td>
+<td>${v.codigo}</td>
+<td>${v.valor}</td>
+<td>${v.lucro}</td>
+<td>${v.status}</td>
+<td><button onclick="cancelarVenda(${i})">Cancelar</button></td>
+</tr>`
+})
+renderReceber()
+}
+
+function cancelarVenda(i){
+if(!confirm("Cancelar venda?")) return
+let motivo=prompt("Motivo do cancelamento:")
+let v=vendas[i]
+estoque.push({
+modelo:"Cancelado",
+codigo:v.codigo,
+custo:v.valor-v.lucro,
+milhas:0
+})
+cancelamentos.push({
+loja:v.loja,
+comprador:v.comprador,
+codigo:v.codigo,
+valor:v.valor,
+motivo,
+data:new Date().toLocaleString()
+})
+vendas.splice(i,1)
+salvar()
+renderEstoque()
+renderVendas()
+renderCancelamentos()
+dashboard()
+}
+
+function renderCancelamentos(){
+tabelaCancelamentos.innerHTML=""
+cancelamentos.forEach(c=>{
+tabelaCancelamentos.innerHTML+=`
+<tr>
+<td>${c.loja}</td>
+<td>${c.comprador}</td>
+<td>${c.codigo}</td>
+<td>${c.valor}</td>
+<td>${c.motivo}</td>
+<td>${c.data}</td>
+</tr>`
+})
+}
+
+function renderReceber(){
+tabelaReceber.innerHTML=""
+vendas.filter(v=>v.status==="Pendente").forEach((v,i)=>{
+tabelaReceber.innerHTML+=`
+<tr>
+<td>${v.loja}</td>
+<td>${v.comprador}</td>
+<td>${v.valor}</td>
+<td><button onclick="marcarPago(${i})">Pago</button></td>
+</tr>`
+})
+}
+
+function marcarPago(i){
+vendas[i].status="Recebido"
+salvar()
+renderVendas()
+dashboard()
+}
+
+function dashboard(){
+let caixa=0
+let lucro=0
+let milhas=0
+let contagem={}
+let lucroM={}
+
+vendas.forEach(v=>{
+if(v.status==="Recebido") caixa+=v.valor
+lucro+=v.lucro
+if(!lucroM[v.loja]) lucroM[v.loja]=0
+lucroM[v.loja]+=v.lucro
+})
+
+estoque.forEach(p=>{
+milhas+=p.milhas
+if(!contagem[p.modelo]) contagem[p.modelo]=0
+contagem[p.modelo]++
+})
+
+document.getElementById("caixa").innerHTML="R$ "+caixa
+document.getElementById("lucro").innerHTML="R$ "+lucro
+document.getElementById("milhas").innerHTML=milhas
+
+estoqueModelo.innerHTML=""
+for(let m in contagem){
+estoqueModelo.innerHTML+=m+" — "+contagem[m]+"<br>"
+}
+
+lucroModelo.innerHTML=""
+for(let m in lucroM){
+lucroModelo.innerHTML+=m+" — "+lucroM[m]+"<br>"
+}
+}
+
+function backup(){
+let blob=new Blob([JSON.stringify({estoque,vendas,modelos,lojas,cancelamentos})])
+let a=document.createElement("a")
+a.href=URL.createObjectURL(blob)
+a.download="backup_leon_vendas.json"
+a.click()
+}
+
+function importar(){
+let input=document.createElement("input")
+input.type="file"
+input.onchange=e=>{
+let file=e.target.files[0]
+let reader=new FileReader()
+reader.onload=function(){
+let data=JSON.parse(reader.result)
+estoque=data.estoque||[]
+vendas=data.vendas||[]
+modelos=data.modelos||[]
+lojas=data.lojas||[]
+cancelamentos=data.cancelamentos||[]
+salvar()
+renderAll()
+}
+reader.readAsText(file)
+}
+input.click()
+}
 </script>
 
 </body>
