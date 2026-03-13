@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Leon Vendas PRO</title>
 
 <link rel="stylesheet" href="style.css">
+
 <script src="https://unpkg.com/html5-qrcode"></script>
+
 </head>
 
 <body>
@@ -26,29 +30,156 @@
 <div id="app" style="display:none">
 
 <header>
+
 <h2>Leon Vendas PRO</h2>
+
 </header>
 
 <nav>
 
 <button onclick="show('dashboard')">Dashboard</button>
-<button onclick="show('lojas')">Lojas</button>
+<button onclick="show('clientes')">Lojas</button>
 <button onclick="show('modelos')">Modelos</button>
 <button onclick="show('estoque')">Estoque</button>
 <button onclick="show('vendas')">Vendas</button>
-<button onclick="show('receber')">Contas a Receber</button>
 <button onclick="show('cancelamentos')">Cancelamentos</button>
 <button onclick="logout()">Sair</button>
 
 </nav>
 
-<section id="dashboard"></section>
-<section id="lojas"></section>
-<section id="modelos"></section>
-<section id="estoque"></section>
-<section id="vendas"></section>
-<section id="receber"></section>
-<section id="cancelamentos"></section>
+<section id="dashboard">
+
+<h3>Caixa de Hoje</h3>
+
+<div id="caixa"></div>
+
+<h3>Lucro</h3>
+
+<div id="lucro"></div>
+
+<h3>Milhas</h3>
+
+<div id="milhas"></div>
+
+</section>
+
+<section id="clientes">
+
+<h3>Cadastrar Loja</h3>
+
+<input id="clienteNome" placeholder="Nome da loja">
+
+<button onclick="salvarCliente()">Salvar</button>
+
+<div id="listaClientes"></div>
+
+</section>
+
+<section id="modelos">
+
+<h3>Criar Modelo</h3>
+
+<input id="modeloNome" placeholder="Modelo">
+
+<input id="capacidade" placeholder="Capacidade">
+
+<input id="cor" placeholder="Cor">
+
+<button onclick="salvarModelo()">Salvar</button>
+
+<div id="listaModelos"></div>
+
+</section>
+
+<section id="estoque">
+
+<h3>Cadastrar aparelho</h3>
+
+<select id="modelo"></select>
+
+<input id="codigo" placeholder="IMEI">
+
+<input id="custo" placeholder="Custo">
+
+<input id="milhasAdd" placeholder="Milhas">
+
+<button onclick="addEstoque()">Adicionar</button>
+
+<h3>Scanner</h3>
+
+<div id="reader" style="width:300px"></div>
+
+</section>
+
+<section id="vendas">
+
+<h3>Registrar Venda</h3>
+
+<select id="clienteVenda"></select>
+
+<input id="comprador" placeholder="Comprador">
+
+<input id="codigoVenda" placeholder="IMEI">
+
+<input id="valorVenda" placeholder="Valor">
+
+<select id="status">
+
+<option>Recebido</option>
+<option>Pendente</option>
+
+</select>
+
+<button onclick="vender()">Registrar venda</button>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Loja</th>
+<th>Comprador</th>
+<th>IMEI</th>
+<th>Valor</th>
+<th>Lucro</th>
+<th>Status</th>
+
+</tr>
+
+</thead>
+
+<tbody id="tabelaVendas"></tbody>
+
+</table>
+
+</section>
+
+<section id="cancelamentos">
+
+<h3>Histórico de cancelamentos</h3>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Loja</th>
+<th>Comprador</th>
+<th>IMEI</th>
+<th>Valor</th>
+<th>Motivo</th>
+
+</tr>
+
+</thead>
+
+<tbody id="tabelaCancelamentos"></tbody>
+
+</table>
+
+</section>
 
 </div>
 
