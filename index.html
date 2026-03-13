@@ -1,45 +1,28 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
+display:block
+}
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+input,select{
+padding:8px;
+margin:5px;
+}
 
-<title>Leon Vendas PRO</title>
+table{
+width:100%;
+border-collapse:collapse;
+@@ -61,9 +66,9 @@
+padding:8px
+}
 
-<script src="https://unpkg.com/html5-qrcode"></script>
-
-<style>
-
-body{font-family:Arial;margin:0;background:#f4f6fa}
-
-header{background:black;color:white;padding:15px;text-align:center}
-
-nav{display:flex;flex-wrap:wrap;gap:10px;padding:10px;justify-content:center;background:#222}
-
-nav button{padding:10px;border:none;border-radius:5px;cursor:pointer}
-
-section{display:none;padding:20px}
-
-section.active{display:block}
-
-input,select{padding:8px;margin:5px}
-
-table{width:100%;border-collapse:collapse;background:white}
-
-th,td{border:1px solid #ddd;padding:8px}
-
-#login{text-align:center;margin-top:120px}
-
-#sugestoes{background:white;border:1px solid #ccc;width:250px;position:absolute}
-
-#sugestoes div{padding:5px;cursor:pointer}
-
-#sugestoes div:hover{background:#eee}
+input,select{
+padding:8px;
+margin:5px;
+#login{
+text-align:center;
+margin-top:100px
+}
 
 </style>
-
-</head>
+@@ -72,6 +77,19 @@
 
 <body>
 
@@ -57,203 +40,55 @@ th,td{border:1px solid #ddd;padding:8px}
 <div id="app" style="display:none">
 
 <header>
-
 <h2>Leon Vendas PRO</h2>
-
 </header>
-
-<nav>
-
-<button onclick="show('dashboard')">Dashboard</button>
-<button onclick="show('lojas')">Lojas</button>
-<button onclick="show('modelos')">Modelos</button>
+@@ -85,6 +103,7 @@ <h2>Leon Vendas PRO</h2>
+<button onclick="show('manual')">Adicionar Manual</button>
 <button onclick="show('estoque')">Estoque</button>
 <button onclick="show('vendas')">Vendas</button>
-<button onclick="show('receber')">Contas a Receber</button>
-<button onclick="show('cancelamentos')">Cancelamentos</button>
-<button onclick="backup()">Backup</button>
-<button onclick="importar()">Importar</button>
-<button onclick="logout()">Sair</button>
+<button onclick="logout()">SAIR</button>
 
 </nav>
 
-<section id="dashboard" class="active">
+@@ -100,7 +119,7 @@ <h3>Caixa de Hoje</h3>
 
-<h3>Caixa</h3>
-<div id="caixa"></div>
+<h3>Cadastrar Loja</h3>
 
-<h3>Lucro</h3>
-<div id="lucro"></div>
+<input id="clienteNome" placeholder="Nome da loja">
+<input id="clienteNome">
 
-<h3>Milhas</h3>
-<div id="milhas"></div>
+<button onclick="salvarCliente()">Salvar</button>
 
-<h3>Estoque por modelo</h3>
-<div id="estoqueModelo"></div>
-
-<h3>Lucro por modelo</h3>
-<div id="lucroModelo"></div>
-
-</section>
-
-<section id="lojas">
-
-<h3>Cadastrar loja</h3>
-
-<input id="lojaNome">
-
-<button onclick="addLoja()">Salvar</button>
-
-<div id="listaLojas"></div>
-
-</section>
-
-<section id="modelos">
-
-<h3>Criar modelo</h3>
+@@ -114,6 +133,10 @@ <h3>Criar Modelo</h3>
 
 <input id="modeloNome" placeholder="Modelo">
 
-<input id="modeloCap" placeholder="Capacidade">
+<input id="capacidade" placeholder="Capacidade">
 
-<input id="modeloCor" placeholder="Cor">
+<input id="cor" placeholder="Cor">
 
-<button onclick="criarModelo()">Salvar</button>
+<button onclick="salvarModelo()">Salvar</button>
 
 <div id="listaModelos"></div>
-
-</section>
-
-<section id="estoque">
-
-<h3>Cadastrar aparelho</h3>
-
-<select id="modeloSelect"></select>
-
-<input id="codigo" placeholder="IMEI">
-
-<button onclick="scanner()">Scanner</button>
+@@ -128,7 +151,7 @@ <h3>Scanner</h3>
 
 <div id="reader" style="width:300px"></div>
 
-<input id="custo" placeholder="Custo">
+<button onclick="startScanner()">Iniciar</button>
+<button onclick="startScanner()">Iniciar Scanner</button>
 
-<input id="milhasAdd" placeholder="Milhas">
+</section>
 
-<button onclick="addEstoque()">Adicionar</button>
-
-<h3>Buscar</h3>
-
-<input id="busca" onkeyup="buscar()">
-
-<table>
-
+@@ -153,6 +176,8 @@ <h3>Estoque</h3>
 <thead>
-
 <tr>
 <th>Modelo</th>
-<th>IMEI</th>
-<th>Custo</th>
-<th>Milhas</th>
-<th>Ação</th>
+<th>Capacidade</th>
+<th>Cor</th>
+<th>Código</th>
+<th>Tipo</th>
 </tr>
-
-</thead>
-
-<tbody id="tabelaEstoque"></tbody>
-
-</table>
-
-</section>
-
-<section id="vendas">
-
-<h3>Registrar venda</h3>
-
-<select id="vendaLoja"></select>
-
-<input id="comprador" placeholder="Comprador">
-
-<input id="codigoVenda" placeholder="IMEI" onkeyup="buscarIMEI()">
-
-<div id="sugestoes"></div>
-
-<input id="valorVenda" placeholder="Valor">
-
-<select id="status">
-<option>Recebido</option>
-<option>Pendente</option>
-</select>
-
-<button onclick="vender()">Registrar venda</button>
-
-<table>
-
-<thead>
-
-<tr>
-<th>Loja</th>
-<th>Comprador</th>
-<th>IMEI</th>
-<th>Valor</th>
-<th>Lucro</th>
-<th>Status</th>
-<th>Ação</th>
-</tr>
-
-</thead>
-
-<tbody id="tabelaVendas"></tbody>
-
-</table>
-
-</section>
-
-<section id="receber">
-
-<h3>Contas a receber</h3>
-
-<table>
-
-<thead>
-
-<tr>
-<th>Loja</th>
-<th>Comprador</th>
-<th>Valor</th>
-<th>Ação</th>
-</tr>
-
-</thead>
-
-<tbody id="tabelaReceber"></tbody>
-
-</table>
-
-</section>
-
-<section id="cancelamentos">
-
-<h3>Histórico de cancelamentos</h3>
-
-<table>
-
-<thead>
-
-<tr>
-<th>Loja</th>
-<th>Comprador</th>
-<th>IMEI</th>
-<th>Valor</th>
-<th>Motivo</th>
-<th>Data</th>
-</tr>
-
-</thead>
-
-<tbody id="tabelaCancelamentos"></tbody>
-
-</table>
+@@ -197,15 +222,17 @@ <h3>Histórico</h3>
 
 </section>
 
@@ -261,57 +96,65 @@ th,td{border:1px solid #ddd;padding:8px}
 
 <script>
 
-let estoque=[]
-let vendas=[]
-let modelos=[]
-let lojas=[]
-let cancelamentos=[]
+let db
 
-function salvar(){
+let request = indexedDB.open("LeonDB",1)
+let request=indexedDB.open("LeonDB",1)
 
-localStorage.setItem("leonDB",JSON.stringify({estoque,vendas,modelos,lojas,cancelamentos}))
+request.onupgradeneeded = function(e){
+request.onupgradeneeded=function(e){
+
+db = e.target.result
+db=e.target.result
+
+db.createObjectStore("clientes",{keyPath:"id",autoIncrement:true})
+db.createObjectStore("modelos",{keyPath:"id",autoIncrement:true})
+@@ -218,20 +245,71 @@ <h3>Histórico</h3>
+
+db=e.target.result
+
+init()
+
+}
+
+function init(){
+
+if(localStorage.getItem("logado")){
+
+document.getElementById("login").style.display="none"
+document.getElementById("app").style.display="block"
 
 }
 
-function carregar(){
-
-let dados=localStorage.getItem("leonDB")
-
-if(dados){
-
-let obj=JSON.parse(dados)
-
-estoque=obj.estoque||[]
-
-vendas=obj.vendas||[]
-
-modelos=obj.modelos||[]
-
-lojas=obj.lojas||[]
-
-cancelamentos=obj.cancelamentos||[]
-
-}
+carregarClientes()
+carregarModelos()
+carregarEstoque()
+carregarVendas()
 
 }
 
 function login(){
 
-if(user.value==="Leon" && pass.value==="Leon@017"){
+let u=document.getElementById("user").value
+let p=document.getElementById("pass").value
 
-login.style.display="none"
+if(u==="Leon" && p==="Leon@017"){
 
-app.style.display="block"
+localStorage.setItem("logado","sim")
 
-carregar()
+location.reload()
 
-renderAll()
+}else{
+
+alert("login inválido")
 
 }
 
 }
 
 function logout(){
+
+localStorage.removeItem("logado")
 
 location.reload()
 
@@ -325,314 +168,211 @@ document.getElementById(id).classList.add("active")
 
 }
 
-function renderAll(){
+function detectarTipo(c){
 
-renderLojas()
+if(c.length==15 && c.startsWith("35")) return "IMEI"
 
-renderModelos()
+if(c.length==17) return "SN"
 
-renderEstoque()
-
-renderVendas()
-
-renderCancelamentos()
-
-dashboard()
+return "DESCONHECIDO"
 
 }
-function renderLojas(){
-listaLojas.innerHTML=""
-vendaLoja.innerHTML=""
-lojas.forEach((l,i)=>{
-listaLojas.innerHTML+=l+" <button onclick='delLoja("+i+")'>Excluir</button><br>"
-vendaLoja.innerHTML+="<option>"+l+"</option>"
-})
+
+function salvarCliente(){
+
+let nome=document.getElementById("clienteNome").value
+@@ -256,15 +334,14 @@ <h3>Histórico</h3>
+
+tx.objectStore("clientes").openCursor().onsuccess=function(e){
+
+let cursor=e.target.result
+let c=e.target.result
+
+if(cursor){
+if(c){
+
+lista.innerHTML+=cursor.value.nome+"<br>"
+lista.innerHTML+=c.value.nome+"<br>"
+select.innerHTML+=`<option>${c.value.nome}</option>`
+
+select.innerHTML+=`<option>${cursor.value.nome}</option>`
+
+cursor.continue()
+c.continue()
+
 }
 
-function addLoja(){
-if(!lojaNome.value) return
-lojas.push(lojaNome.value)
-lojaNome.value=""
-salvar()
-renderLojas()
+@@ -275,10 +352,12 @@ <h3>Histórico</h3>
+function salvarModelo(){
+
+let nome=document.getElementById("modeloNome").value
+let cap=document.getElementById("capacidade").value
+let cor=document.getElementById("cor").value
+
+let tx=db.transaction("modelos","readwrite")
+
+tx.objectStore("modelos").add({nome})
+tx.objectStore("modelos").add({nome,cap,cor})
+
+carregarModelos()
+
+@@ -298,43 +377,42 @@ <h3>Histórico</h3>
+
+tx.objectStore("modelos").openCursor().onsuccess=function(e){
+
+let cursor=e.target.result
+let m=e.target.result
+
+if(cursor){
+if(m){
+
+lista.innerHTML+=cursor.value.nome+"<br>"
+lista.innerHTML+=`${m.value.nome} ${m.value.cap} ${m.value.cor}<br>`
+
+s1.innerHTML+=`<option>${cursor.value.nome}</option>`
+s2.innerHTML+=`<option>${cursor.value.nome}</option>`
+let txt=`${m.value.nome} ${m.value.cap} ${m.value.cor}`
+
+cursor.continue()
+s1.innerHTML+=`<option value="${txt}">${txt}</option>`
+s2.innerHTML+=`<option value="${txt}">${txt}</option>`
+
+}
+m.continue()
+
 }
 
-function delLoja(i){
-if(!confirm("Excluir loja?")) return
-lojas.splice(i,1)
-salvar()
-renderLojas()
 }
 
-function criarModelo(){
-let m=modeloNome.value+" "+modeloCap.value+" "+modeloCor.value
-modelos.push(m)
-modeloNome.value=""
-modeloCap.value=""
-modeloCor.value=""
-salvar()
-renderModelos()
+function detectarTipo(codigo){
+
+if(codigo.length==15 && codigo.startsWith("35")) return "IMEI"
+
+if(codigo.length==17) return "SN"
+
+return "DESCONHECIDO"
+
 }
 
-function renderModelos(){
-listaModelos.innerHTML=""
-modeloSelect.innerHTML=""
-modelos.forEach((m,i)=>{
-listaModelos.innerHTML+=m+" <button onclick='delModelo("+i+")'>Excluir</button><br>"
-modeloSelect.innerHTML+="<option>"+m+"</option>"
-})
-}
+function adicionarManual(){
 
-function delModelo(i){
-if(!confirm("Excluir modelo?")) return
-modelos.splice(i,1)
-salvar()
-renderModelos()
-}
+let modelo=document.getElementById("modeloManual").value
 
-function scanner(){
-const html5QrCode=new Html5Qrcode("reader")
-html5QrCode.start(
-{ facingMode:"environment" },
-{ fps:10, qrbox:250 },
-(decodedText)=>{
-codigo.value=decodedText
-html5QrCode.stop()
-}
-)
-}
+let codigo=document.getElementById("codigoManual").value
 
-function addEstoque(){
-if(!codigo.value) return
-estoque.push({
-modelo:modeloSelect.value,
-codigo:codigo.value,
-custo:parseFloat(custo.value)||0,
-milhas:parseFloat(milhasAdd.value)||0
-})
-codigo.value=""
-custo.value=""
-milhasAdd.value=""
-salvar()
-renderEstoque()
-dashboard()
-}
+let tipo=detectarTipo(codigo)
 
-function renderEstoque(){
-tabelaEstoque.innerHTML=""
-estoque.forEach((p,i)=>{
-tabelaEstoque.innerHTML+=`
+let partes=modelo.split(" ")
+
+let nome=partes[0]
+let cap=partes[1]
+let cor=partes[2]
+
+let tx=db.transaction("estoque","readwrite")
+
+tx.objectStore("estoque").add({codigo,modelo,tipo})
+tx.objectStore("estoque").add({codigo,modelo:nome,cap,cor,tipo})
+
+carregarEstoque()
+
+@@ -344,6 +422,12 @@ <h3>Histórico</h3>
+
+let modelo=document.getElementById("modeloScanner").value
+
+let partes=modelo.split(" ")
+
+let nome=partes[0]
+let cap=partes[1]
+let cor=partes[2]
+
+const scanner=new Html5Qrcode("reader")
+
+scanner.start(
+@@ -356,7 +440,7 @@ <h3>Histórico</h3>
+
+let tx=db.transaction("estoque","readwrite")
+
+tx.objectStore("estoque").add({codigo:decodedText,modelo,tipo})
+tx.objectStore("estoque").add({codigo:decodedText,modelo:nome,cap,cor,tipo})
+
+scanner.stop()
+
+@@ -380,21 +464,23 @@ <h3>Histórico</h3>
+
+tx.objectStore("estoque").openCursor().onsuccess=function(e){
+
+let cursor=e.target.result
+let c=e.target.result
+
+if(cursor){
+if(c){
+
+let p=cursor.value
+let p=c.value
+
+tabela.innerHTML+=`
 <tr>
 <td>${p.modelo}</td>
+<td>${p.cap}</td>
+<td>${p.cor}</td>
 <td>${p.codigo}</td>
-<td>${p.custo}</td>
-<td>${p.milhas}</td>
-<td><button onclick="delEstoque(${i})">Excluir</button></td>
-</tr>`
-})
+<td>${p.tipo}</td>
+</tr>
+`
+
+cursor.continue()
+c.continue()
+
 }
 
-function delEstoque(i){
-if(!confirm("Excluir aparelho?")) return
-estoque.splice(i,1)
-salvar()
-renderEstoque()
-dashboard()
-}
+@@ -411,18 +497,12 @@ <h3>Histórico</h3>
 
-function buscar(){
-let t=busca.value.toLowerCase()
-tabelaEstoque.innerHTML=""
-estoque.filter(p=>p.codigo.includes(t)||p.modelo.toLowerCase().includes(t))
-.forEach((p,i)=>{
-tabelaEstoque.innerHTML+=`
-<tr>
-<td>${p.modelo}</td>
-<td>${p.codigo}</td>
-<td>${p.custo}</td>
-<td>${p.milhas}</td>
-<td><button onclick="delEstoque(${i})">Excluir</button></td>
-</tr>`
-})
-}
+let tx=db.transaction(["estoque","vendas"],"readwrite")
 
-function buscarIMEI(){
-let termo=codigoVenda.value
-sugestoes.innerHTML=""
-estoque.filter(p=>p.codigo.includes(termo)).forEach(p=>{
-sugestoes.innerHTML+=`<div onclick="selecionarIMEI('${p.codigo}')">${p.codigo}</div>`
-})
-}
-
-function selecionarIMEI(c){
-codigoVenda.value=c
-sugestoes.innerHTML=""
-}
-
-function vender(){
-let imei=codigoVenda.value
-let aparelho=estoque.find(p=>p.codigo===imei)
-if(!aparelho){alert("IMEI não encontrado");return}
-let valor=parseFloat(valorVenda.value)||0
-let lucro=valor-aparelho.custo
-vendas.push({
-loja:vendaLoja.value,
-comprador:comprador.value,
-codigo:imei,
+tx.objectStore("vendas").add({
+codigo,
+cliente,
+comprador,
 valor,
-lucro,
-status:status.value,
-data:new Date().toLocaleString()
+data:new Date()
 })
-estoque=estoque.filter(p=>p.codigo!==imei)
-salvar()
-renderEstoque()
-renderVendas()
-dashboard()
+tx.objectStore("vendas").add({codigo,cliente,comprador,valor,data:new Date()})
+
+tx.objectStore("estoque").delete(codigo)
+
+carregarVendas()
+carregarEstoque()
+carregarVendas()
+
 }
 
-function renderVendas(){
-tabelaVendas.innerHTML=""
-vendas.forEach((v,i)=>{
-tabelaVendas.innerHTML+=`
+@@ -436,22 +516,22 @@ <h3>Histórico</h3>
+
+tx.objectStore("vendas").openCursor().onsuccess=function(e){
+
+let cursor=e.target.result
+let v=e.target.result
+
+if(cursor){
+if(v){
+
+let v=cursor.value
+let d=v.value
+
+tabela.innerHTML+=`
 <tr>
-<td>${v.loja}</td>
-<td>${v.comprador}</td>
+<td>${v.cliente}</td>
 <td>${v.codigo}</td>
 <td>${v.valor}</td>
-<td>${v.lucro}</td>
-<td>${v.status}</td>
-<td><button onclick="cancelarVenda(${i})">Cancelar</button></td>
-</tr>`
-})
-renderReceber()
+<td>${new Date(v.data).toLocaleString()}</td>
+<td>${d.cliente}</td>
+<td>${d.codigo}</td>
+<td>${d.valor}</td>
+<td>${new Date(d.data).toLocaleString()}</td>
+</tr>
+`
+
+cursor.continue()
+v.continue()
+
 }
-
-function cancelarVenda(i){
-if(!confirm("Cancelar venda?")) return
-let motivo=prompt("Motivo do cancelamento:")
-let v=vendas[i]
-estoque.push({
-modelo:"Cancelado",
-codigo:v.codigo,
-custo:v.valor-v.lucro,
-milhas:0
-})
-cancelamentos.push({
-loja:v.loja,
-comprador:v.comprador,
-codigo:v.codigo,
-valor:v.valor,
-motivo,
-data:new Date().toLocaleString()
-})
-vendas.splice(i,1)
-salvar()
-renderEstoque()
-renderVendas()
-renderCancelamentos()
-dashboard()
-}
-
-function renderCancelamentos(){
-tabelaCancelamentos.innerHTML=""
-cancelamentos.forEach(c=>{
-tabelaCancelamentos.innerHTML+=`
-<tr>
-<td>${c.loja}</td>
-<td>${c.comprador}</td>
-<td>${c.codigo}</td>
-<td>${c.valor}</td>
-<td>${c.motivo}</td>
-<td>${c.data}</td>
-</tr>`
-})
-}
-
-function renderReceber(){
-tabelaReceber.innerHTML=""
-vendas.filter(v=>v.status==="Pendente").forEach((v,i)=>{
-tabelaReceber.innerHTML+=`
-<tr>
-<td>${v.loja}</td>
-<td>${v.comprador}</td>
-<td>${v.valor}</td>
-<td><button onclick="marcarPago(${i})">Pago</button></td>
-</tr>`
-})
-}
-
-function marcarPago(i){
-vendas[i].status="Recebido"
-salvar()
-renderVendas()
-dashboard()
-}
-
-function dashboard(){
-let caixa=0
-let lucro=0
-let milhas=0
-let contagem={}
-let lucroM={}
-
-vendas.forEach(v=>{
-if(v.status==="Recebido") caixa+=v.valor
-lucro+=v.lucro
-if(!lucroM[v.loja]) lucroM[v.loja]=0
-lucroM[v.loja]+=v.lucro
-})
-
-estoque.forEach(p=>{
-milhas+=p.milhas
-if(!contagem[p.modelo]) contagem[p.modelo]=0
-contagem[p.modelo]++
-})
-
-document.getElementById("caixa").innerHTML="R$ "+caixa
-document.getElementById("lucro").innerHTML="R$ "+lucro
-document.getElementById("milhas").innerHTML=milhas
-
-estoqueModelo.innerHTML=""
-for(let m in contagem){
-estoqueModelo.innerHTML+=m+" — "+contagem[m]+"<br>"
-}
-
-lucroModelo.innerHTML=""
-for(let m in lucroM){
-lucroModelo.innerHTML+=m+" — "+lucroM[m]+"<br>"
-}
-}
-
-function backup(){
-let blob=new Blob([JSON.stringify({estoque,vendas,modelos,lojas,cancelamentos})])
-let a=document.createElement("a")
-a.href=URL.createObjectURL(blob)
-a.download="backup_leon_vendas.json"
-a.click()
-}
-
-function importar(){
-let input=document.createElement("input")
-input.type="file"
-input.onchange=e=>{
-let file=e.target.files[0]
-let reader=new FileReader()
-reader.onload=function(){
-let data=JSON.parse(reader.result)
-estoque=data.estoque||[]
-vendas=data.vendas||[]
-modelos=data.modelos||[]
-lojas=data.lojas||[]
-cancelamentos=data.cancelamentos||[]
-salvar()
-renderAll()
-}
-reader.readAsText(file)
-}
-input.click()
-}
-</script>
-
-</body>
-</html>
