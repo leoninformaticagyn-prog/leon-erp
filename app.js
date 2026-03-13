@@ -304,7 +304,12 @@ let reader=document.getElementById("reader")
 
 reader.style.display="block"
 
-if(scanner) return
+if(scanner){
+scanner.stop().then(()=>{
+scanner.clear()
+scanner=null
+})
+}
 
 scanner = new Html5Qrcode("reader")
 
@@ -328,8 +333,10 @@ if(imei.length===15 && imei.startsWith("35")){
 
 document.getElementById("codigo").value=imei
 
-scanner.stop()
+scanner.stop().then(()=>{
+scanner.clear()
 scanner=null
+})
 
 document.getElementById("reader").style.display="none"
 
