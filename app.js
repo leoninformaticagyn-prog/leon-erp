@@ -50,14 +50,13 @@ modelo:modelo.value,
 cap:cap.value,
 cor:cor.value,
 codigo:imei,
-custo:parseFloat(custo.value),
-milhas:parseFloat(milhasAdd.value)
+custo:parseFloat(custo.value) || 0,
+milhas:parseFloat(milhasAdd.value) || 0
 
 })
 
 renderEstoque()
 dashboard()
-
 
 }
 
@@ -304,7 +303,10 @@ a.download="relatorio_vendas.csv"
 a.click()
 
 }
+
 function iniciarScanner(){
+
+if(!document.getElementById("reader")) return
 
 const html5QrCode = new Html5Qrcode("reader")
 
