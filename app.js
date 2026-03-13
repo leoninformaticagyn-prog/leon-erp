@@ -1,6 +1,8 @@
 let estoque=[]
 let vendas=[]
 
+let scannerAtivo=false
+
 function login(){
 
 let u = document.getElementById("user").value
@@ -30,6 +32,8 @@ function show(id){
 document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
 
 document.getElementById(id).classList.add("active")
+
+if(id==="estoque") iniciarScanner()
 
 }
 
@@ -306,9 +310,11 @@ a.click()
 
 function iniciarScanner(){
 
-if(!document.getElementById("reader")) return
+if(scannerAtivo) return
 
-const html5QrCode = new Html5Qrcode("reader")
+scannerAtivo=true
+
+const html5QrCode = new Html5QrCode("reader")
 
 html5QrCode.start(
 { facingMode: "environment" },
@@ -320,12 +326,16 @@ document.getElementById("codigo").value = code
 
 html5QrCode.stop()
 
+scannerAtivo=false
+
 }
 
 ).catch(err=>{
+
 console.log("scanner não iniciado")
+
+scannerAtivo=false
+
 })
 
 }
-
-setTimeout(iniciarScanner,1000)
