@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Leon Vendas PRO</title>
 
-</style>
-
+<link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/html5-qrcode"></script>
+</head>
 
 <body>
 
@@ -28,337 +28,31 @@
 <header>
 <h2>Leon Vendas PRO</h2>
 </header>
-@@ -85,6 +103,7 @@ <h2>Leon Vendas PRO</h2>
-<button onclick="show('manual')">Adicionar Manual</button>
+
+<nav>
+
+<button onclick="show('dashboard')">Dashboard</button>
+<button onclick="show('lojas')">Lojas</button>
+<button onclick="show('modelos')">Modelos</button>
 <button onclick="show('estoque')">Estoque</button>
 <button onclick="show('vendas')">Vendas</button>
-<button onclick="logout()">SAIR</button>
+<button onclick="show('receber')">Contas a Receber</button>
+<button onclick="show('cancelamentos')">Cancelamentos</button>
+<button onclick="logout()">Sair</button>
 
 </nav>
 
-@@ -100,7 +119,7 @@ <h3>Caixa de Hoje</h3>
-
-<h3>Cadastrar Loja</h3>
-
-<input id="clienteNome" placeholder="Nome da loja">
-<input id="clienteNome">
-
-<button onclick="salvarCliente()">Salvar</button>
-
-@@ -114,6 +133,10 @@ <h3>Criar Modelo</h3>
-
-<input id="modeloNome" placeholder="Modelo">
-
-<input id="capacidade" placeholder="Capacidade">
-
-<input id="cor" placeholder="Cor">
-
-<button onclick="salvarModelo()">Salvar</button>
-
-<div id="listaModelos"></div>
-@@ -128,7 +151,7 @@ <h3>Scanner</h3>
-
-<div id="reader" style="width:300px"></div>
-
-<button onclick="startScanner()">Iniciar</button>
-<button onclick="startScanner()">Iniciar Scanner</button>
-
-</section>
-
-@@ -153,6 +176,8 @@ <h3>Estoque</h3>
-<thead>
-<tr>
-<th>Modelo</th>
-<th>Capacidade</th>
-<th>Cor</th>
-<th>Código</th>
-<th>Tipo</th>
-</tr>
-@@ -197,15 +222,17 @@ <h3>Histórico</h3>
-
-</section>
+<section id="dashboard"></section>
+<section id="lojas"></section>
+<section id="modelos"></section>
+<section id="estoque"></section>
+<section id="vendas"></section>
+<section id="receber"></section>
+<section id="cancelamentos"></section>
 
 </div>
 
-<script>
+<script src="app.js"></script>
 
-let db
-
-let request = indexedDB.open("LeonDB",1)
-let request=indexedDB.open("LeonDB",1)
-
-request.onupgradeneeded = function(e){
-request.onupgradeneeded=function(e){
-
-db = e.target.result
-db=e.target.result
-
-db.createObjectStore("clientes",{keyPath:"id",autoIncrement:true})
-db.createObjectStore("modelos",{keyPath:"id",autoIncrement:true})
-@@ -218,20 +245,71 @@ <h3>Histórico</h3>
-
-db=e.target.result
-
-init()
-
-}
-
-function init(){
-
-if(localStorage.getItem("logado")){
-
-document.getElementById("login").style.display="none"
-document.getElementById("app").style.display="block"
-
-}
-
-carregarClientes()
-carregarModelos()
-carregarEstoque()
-carregarVendas()
-
-}
-
-function login(){
-
-let u=document.getElementById("user").value
-let p=document.getElementById("pass").value
-
-if(u==="Leon" && p==="Leon@017"){
-
-localStorage.setItem("logado","sim")
-
-location.reload()
-
-}else{
-
-alert("login inválido")
-
-}
-
-}
-
-function logout(){
-
-localStorage.removeItem("logado")
-
-location.reload()
-
-}
-
-function show(id){
-
-document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
-
-document.getElementById(id).classList.add("active")
-
-}
-
-function detectarTipo(c){
-
-if(c.length==15 && c.startsWith("35")) return "IMEI"
-
-if(c.length==17) return "SN"
-
-return "DESCONHECIDO"
-
-}
-
-function salvarCliente(){
-
-let nome=document.getElementById("clienteNome").value
-@@ -256,15 +334,14 @@ <h3>Histórico</h3>
-
-tx.objectStore("clientes").openCursor().onsuccess=function(e){
-
-let cursor=e.target.result
-let c=e.target.result
-
-if(cursor){
-if(c){
-
-lista.innerHTML+=cursor.value.nome+"<br>"
-lista.innerHTML+=c.value.nome+"<br>"
-select.innerHTML+=`<option>${c.value.nome}</option>`
-
-select.innerHTML+=`<option>${cursor.value.nome}</option>`
-
-cursor.continue()
-c.continue()
-
-}
-
-@@ -275,10 +352,12 @@ <h3>Histórico</h3>
-function salvarModelo(){
-
-let nome=document.getElementById("modeloNome").value
-let cap=document.getElementById("capacidade").value
-let cor=document.getElementById("cor").value
-
-let tx=db.transaction("modelos","readwrite")
-
-tx.objectStore("modelos").add({nome})
-tx.objectStore("modelos").add({nome,cap,cor})
-
-carregarModelos()
-
-@@ -298,43 +377,42 @@ <h3>Histórico</h3>
-
-tx.objectStore("modelos").openCursor().onsuccess=function(e){
-
-let cursor=e.target.result
-let m=e.target.result
-
-if(cursor){
-if(m){
-
-lista.innerHTML+=cursor.value.nome+"<br>"
-lista.innerHTML+=`${m.value.nome} ${m.value.cap} ${m.value.cor}<br>`
-
-s1.innerHTML+=`<option>${cursor.value.nome}</option>`
-s2.innerHTML+=`<option>${cursor.value.nome}</option>`
-let txt=`${m.value.nome} ${m.value.cap} ${m.value.cor}`
-
-cursor.continue()
-s1.innerHTML+=`<option value="${txt}">${txt}</option>`
-s2.innerHTML+=`<option value="${txt}">${txt}</option>`
-
-}
-m.continue()
-
-}
-
-}
-
-function detectarTipo(codigo){
-
-if(codigo.length==15 && codigo.startsWith("35")) return "IMEI"
-
-if(codigo.length==17) return "SN"
-
-return "DESCONHECIDO"
-
-}
-
-function adicionarManual(){
-
-let modelo=document.getElementById("modeloManual").value
-
-let codigo=document.getElementById("codigoManual").value
-
-let tipo=detectarTipo(codigo)
-
-let partes=modelo.split(" ")
-
-let nome=partes[0]
-let cap=partes[1]
-let cor=partes[2]
-
-let tx=db.transaction("estoque","readwrite")
-
-tx.objectStore("estoque").add({codigo,modelo,tipo})
-tx.objectStore("estoque").add({codigo,modelo:nome,cap,cor,tipo})
-
-carregarEstoque()
-
-@@ -344,6 +422,12 @@ <h3>Histórico</h3>
-
-let modelo=document.getElementById("modeloScanner").value
-
-let partes=modelo.split(" ")
-
-let nome=partes[0]
-let cap=partes[1]
-let cor=partes[2]
-
-const scanner=new Html5Qrcode("reader")
-
-scanner.start(
-@@ -356,7 +440,7 @@ <h3>Histórico</h3>
-
-let tx=db.transaction("estoque","readwrite")
-
-tx.objectStore("estoque").add({codigo:decodedText,modelo,tipo})
-tx.objectStore("estoque").add({codigo:decodedText,modelo:nome,cap,cor,tipo})
-
-scanner.stop()
-
-@@ -380,21 +464,23 @@ <h3>Histórico</h3>
-
-tx.objectStore("estoque").openCursor().onsuccess=function(e){
-
-let cursor=e.target.result
-let c=e.target.result
-
-if(cursor){
-if(c){
-
-let p=cursor.value
-let p=c.value
-
-tabela.innerHTML+=`
-<tr>
-<td>${p.modelo}</td>
-<td>${p.cap}</td>
-<td>${p.cor}</td>
-<td>${p.codigo}</td>
-<td>${p.tipo}</td>
-</tr>
-`
-
-cursor.continue()
-c.continue()
-
-}
-
-@@ -411,18 +497,12 @@ <h3>Histórico</h3>
-
-let tx=db.transaction(["estoque","vendas"],"readwrite")
-
-tx.objectStore("vendas").add({
-codigo,
-cliente,
-comprador,
-valor,
-data:new Date()
-})
-tx.objectStore("vendas").add({codigo,cliente,comprador,valor,data:new Date()})
-
-tx.objectStore("estoque").delete(codigo)
-
-carregarVendas()
-carregarEstoque()
-carregarVendas()
-
-}
-
-@@ -436,22 +516,22 @@ <h3>Histórico</h3>
-
-tx.objectStore("vendas").openCursor().onsuccess=function(e){
-
-let cursor=e.target.result
-let v=e.target.result
-
-if(cursor){
-if(v){
-
-let v=cursor.value
-let d=v.value
-
-tabela.innerHTML+=`
-<tr>
-<td>${v.cliente}</td>
-<td>${v.codigo}</td>
-<td>${v.valor}</td>
-<td>${new Date(v.data).toLocaleString()}</td>
-<td>${d.cliente}</td>
-<td>${d.codigo}</td>
-<td>${d.valor}</td>
-<td>${new Date(d.data).toLocaleString()}</td>
-</tr>
-`
-
-cursor.continue()
-v.continue()
-
-}
+</body>
+</html>
